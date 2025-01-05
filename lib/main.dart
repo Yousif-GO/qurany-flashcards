@@ -596,6 +596,9 @@ class _SimpleListState extends State<SimpleList> {
         actions: [
           TextButton(
             onPressed: () {
+              final encodedData = base64Url.encode(utf8.encode(
+                  '${widget.groupName ?? ''}|${widget.khatmaName ?? ''}'));
+
               final status = '''🕌 Khatma Progress Update
 
 Group: ${widget.groupName}
@@ -608,15 +611,23 @@ Khatma: ${widget.khatmaName}
 👥 Members:
 ${(roomDetails?['members'] as List? ?? []).map((member) => "• $member").join("\n")}
 
-Join us:
-https://qurany-flashcards.web.app/join?group=${Uri.encodeComponent(widget.groupName ?? '')}&khatma=${Uri.encodeComponent(widget.khatmaName ?? '')}''';
+✨ App Features:
+• Tajweed highlighting
+• Word-by-word mode
+• Audio recitation
+• Group discussions
+• Progress tracking
+• Multi-language support
+
+Join directly:
+https://qurany-flashcards.web.app/join?code=$encodedData''';
 
               Clipboard.setData(ClipboardData(text: status));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Copied to clipboard!')),
               );
             },
-            child: Text('Share'),
+            child: Text('copy'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -2084,8 +2095,7 @@ class _SurahPageState extends State<SurahPage> {
                           ),
                           children: [
                             TextSpan(
-                              text:
-                                  'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ﴿١﴾ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                              text: '',
                               style: TextStyle(
                                 fontFamily: 'Scheherazade',
                                 fontSize: 18,
@@ -2468,80 +2478,78 @@ class _SurahPageState extends State<SurahPage> {
                                                             getQuranFontSize(),
                                                         height: 1.5,
                                                         letterSpacing: 0,
+                                                        color:
+                                                            Color(0xFF2B4141),
                                                       ),
-                                                      children: [
-                                                        TajweedParser
-                                                            .parseTajweedText(
-                                                          (() {
-                                                            String fullText =
-                                                                '';
-                                                            for (var i = 0;
-                                                                i <
-                                                                    _pageAyahs
-                                                                        .length;
-                                                                i++) {
-                                                              var ayah =
-                                                                  _pageAyahs[i];
-                                                              final ayahIndex =
-                                                                  i + 1;
+                                                      children: surahAyahs
+                                                          .map((ayah) {
+                                                        final ayahIndex =
+                                                            _pageAyahs.indexOf(
+                                                                    ayah) +
+                                                                1;
+                                                        final isCurrentAyah =
+                                                            ayahIndex ==
+                                                                _currentAyah;
+                                                        final isPreviousAyah =
+                                                            ayahIndex <
+                                                                _currentAyah;
+                                                        final isPartiallyRevealed =
+                                                            _partiallyRevealedAyahs
+                                                                .contains(
+                                                                    ayahIndex);
+                                                        final isFullyRevealed =
+                                                            _fullyRevealedAyahs
+                                                                .contains(
+                                                                    ayahIndex);
 
-                                                              if (_fullyRevealedAyahs
-                                                                  .contains(
-                                                                      ayahIndex)) {
-                                                                // Second click - show full ayah
-                                                                String cleanVerse = ayah[
-                                                                        'verse']
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        '\n',
-                                                                        ' ')
-                                                                    .replaceAll(
-                                                                        RegExp(
-                                                                            r'\s+'),
-                                                                        ' ');
-                                                                fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ $cleanVerse ';
-                                                              } else if (_partiallyRevealedAyahs
-                                                                  .contains(
-                                                                      ayahIndex)) {
-                                                                // First click - show first word
-                                                                String firstWord = ayah[
-                                                                        'verse']
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        '\n',
-                                                                        ' ')
-                                                                    .split(
-                                                                        ' ')[0];
-                                                                fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ $firstWord ... ';
-                                                              } else if (_currentAyah >
-                                                                  ayahIndex) {
-                                                                // Show full text for previous ayahs
-                                                                String cleanVerse = ayah[
-                                                                        'verse']
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        '\n',
-                                                                        ' ')
-                                                                    .replaceAll(
-                                                                        RegExp(
-                                                                            r'\s+'),
-                                                                        ' ');
-                                                                fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ $cleanVerse ';
-                                                              }
-                                                            }
+                                                        String cleanVerse =
+                                                            ayah['verse']
+                                                                .toString()
+                                                                .replaceAll(
+                                                                    '\n', ' ')
+                                                                .replaceAll(
+                                                                    RegExp(
+                                                                        r'\s+'),
+                                                                    ' ');
 
-                                                            return fullText
-                                                                    .isEmpty
-                                                                ? 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ﴿﴾ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'
-                                                                : fullText
-                                                                    .trim();
-                                                          })(),
-                                                          getQuranFontSize(),
-                                                        ),
-                                                      ],
+                                                        String displayText = '';
+                                                        if (isPreviousAyah) {
+                                                          displayText =
+                                                              cleanVerse;
+                                                        } else if (isCurrentAyah) {
+                                                          if (isFullyRevealed) {
+                                                            displayText =
+                                                                cleanVerse;
+                                                          } else if (isPartiallyRevealed) {
+                                                            displayText =
+                                                                cleanVerse.split(
+                                                                        ' ')[0] +
+                                                                    ' ...';
+                                                          }
+                                                        }
+
+                                                        return TextSpan(
+                                                          children: [
+                                                            TajweedParser
+                                                                .parseTajweedText(
+                                                              displayText,
+                                                              getQuranFontSize(),
+                                                            ),
+                                                            TextSpan(
+                                                              text:
+                                                                  ' ﴿${ayah['ayah']}﴾ ',
+                                                              style: TextStyle(
+                                                                color: isPreviousAyah ||
+                                                                        isCurrentAyah
+                                                                    ? Color(
+                                                                        0xFF2B4141)
+                                                                    : Colors
+                                                                        .transparent,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }).toList(),
                                                     ),
                                                   ),
                                                 ),
