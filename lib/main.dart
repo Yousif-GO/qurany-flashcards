@@ -2030,13 +2030,23 @@ class _SurahPageState extends State<SurahPage> {
                     Container(
                       width: double.infinity,
                       alignment: Alignment.center,
-                      child: Text(
-                        _surahBismillah ??
-                            'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
-                        style: TextStyle(
-                          fontFamily: 'Scheherazade',
-                          fontSize: 18,
-                          color: Colors.white70,
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontFamily: 'Scheherazade',
+                            color: Colors.white70,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                              style: TextStyle(
+                                fontFamily: 'Scheherazade',
+                                fontSize: 18,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -2442,16 +2452,13 @@ class _SurahPageState extends State<SurahPage> {
                                                                             ' ')[0];
                                                                 fullText +=
                                                                     '﴿${ayah['ayah']}﴾ $firstWord ... ';
-                                                              } else if (_fullyRevealedAyahs
+                                                              }
+                                                              if (_fullyRevealedAyahs
                                                                   .contains(
                                                                       ayahIndex)) {
                                                                 // Show full ayah
                                                                 fullText +=
                                                                     '﴿${ayah['ayah']}﴾ ${ayah['verse']} ';
-                                                              } else {
-                                                                // Show only ayah number
-                                                                fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ ';
                                                               }
                                                             }
                                                             return fullText
