@@ -27,6 +27,8 @@ dependencies:
   permission_handler: ^11.3.1
   cloud_firestore: ^4.8.0
   url_launcher: ^6.0.0
+  flutter_share: ^2.0.0
+  share_plus: ^10.1.3
 
 
 

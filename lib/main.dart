@@ -26,6 +26,7 @@ import '../services/tajweed_parser.dart';
 import '../services/comments_service.dart';
 import '../widgets/comments_dialog.dart';
 import '../models/comment.dart';
+import 'package:flutter_share/flutter_share.dart';
 
 enum AppLanguage {
   arabic,
@@ -107,7 +108,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         primaryColor: Color(0xFF417D7A),
-        scaffoldBackgroundColor: Color(0xFFF9F9F9),
+        scaffoldBackgroundColor:
+            Color.fromARGB(255, 255, 255, 255), // Subtle off-white paper color
         appBarTheme: AppBarTheme(
           backgroundColor: Color(0xFF417D7A),
           elevation: 0,
@@ -532,6 +534,16 @@ class _SimpleListState extends State<SimpleList> {
 
   // Add the new dialog methods
   void _showRoomInfoDialog() {
+    // Calculate completed pages
+    int completedPages = 0;
+    final pages = roomDetails?['pages'] as Map<String, dynamic>? ?? {};
+    pages.forEach((key, value) {
+      if (value['completed'] == true) completedPages++;
+    });
+
+    int remainingPages = 604 - completedPages;
+    double completionPercentage = (completedPages / 604) * 100;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -552,6 +564,13 @@ class _SimpleListState extends State<SimpleList> {
                 title: Text('Started'),
                 subtitle: Text(
                   '${roomDetails?['createdAt']?.toDate().toString() ?? 'N/A'}',
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.insert_chart, color: Color(0xFF417D7A)),
+                title: Text('Progress'),
+                subtitle: Text(
+                  'Completed: $completedPages pages\nRemaining: $remainingPages pages\n${completionPercentage.toStringAsFixed(1)}% Complete',
                 ),
               ),
               Divider(),
@@ -575,6 +594,30 @@ class _SimpleListState extends State<SimpleList> {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              final status = '''🕌 Khatma Progress Update
+
+Group: ${widget.groupName}
+Khatma: ${widget.khatmaName}
+
+📊 Progress: ${completionPercentage.toStringAsFixed(1)}%
+• Completed: $completedPages pages
+• Remaining: $remainingPages pages
+
+👥 Members:
+${(roomDetails?['members'] as List? ?? []).map((member) => "• $member").join("\n")}
+
+Join us:
+https://qurany-flashcards.web.app/join?group=${Uri.encodeComponent(widget.groupName ?? '')}&khatma=${Uri.encodeComponent(widget.khatmaName ?? '')}''';
+
+              Clipboard.setData(ClipboardData(text: status));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Copied to clipboard!')),
+              );
+            },
+            child: Text('Share'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Close'),
@@ -2019,6 +2062,8 @@ class _SurahPageState extends State<SurahPage> {
         GestureDetector(
           onTap: _handleFirstClick,
           child: Scaffold(
+            backgroundColor:
+                Color.fromARGB(255, 255, 248, 238), // Add this line
             appBar: AppBar(
               toolbarHeight:
                   isStartOfSurah ? kToolbarHeight * 1.5 : kToolbarHeight,
