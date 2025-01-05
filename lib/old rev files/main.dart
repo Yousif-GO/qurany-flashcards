@@ -22,9 +22,11 @@ import '../screens/quran_room_screen.dart';
 import 'dart:async'; // Add this import for StreamController
 import '../widgets/feedback_dialog.dart';
 import '../firebase_options.dart';
-import '../widgets/comments_dialog.dart';
+import '../services/tajweed_parser.dart';
 import '../services/comments_service.dart';
+import '../widgets/comments_dialog.dart';
 import '../models/comment.dart';
+import 'package:flutter_share/flutter_share.dart';
 
 enum AppLanguage {
   arabic,
@@ -106,7 +108,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         primaryColor: Color(0xFF417D7A),
-        scaffoldBackgroundColor: Color(0xFFF9F9F9),
+        scaffoldBackgroundColor:
+            Color.fromARGB(255, 255, 255, 255), // Subtle off-white paper color
         appBarTheme: AppBarTheme(
           backgroundColor: Color(0xFF417D7A),
           elevation: 0,
@@ -531,6 +534,16 @@ class _SimpleListState extends State<SimpleList> {
 
   // Add the new dialog methods
   void _showRoomInfoDialog() {
+    // Calculate completed pages
+    int completedPages = 0;
+    final pages = roomDetails?['pages'] as Map<String, dynamic>? ?? {};
+    pages.forEach((key, value) {
+      if (value['completed'] == true) completedPages++;
+    });
+
+    int remainingPages = 604 - completedPages;
+    double completionPercentage = (completedPages / 604) * 100;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -551,6 +564,13 @@ class _SimpleListState extends State<SimpleList> {
                 title: Text('Started'),
                 subtitle: Text(
                   '${roomDetails?['createdAt']?.toDate().toString() ?? 'N/A'}',
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.insert_chart, color: Color(0xFF417D7A)),
+                title: Text('Progress'),
+                subtitle: Text(
+                  'Completed: $completedPages pages\nRemaining: $remainingPages pages\n${completionPercentage.toStringAsFixed(1)}% Complete',
                 ),
               ),
               Divider(),
@@ -574,6 +594,41 @@ class _SimpleListState extends State<SimpleList> {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              final encodedData = base64Url.encode(utf8.encode(
+                  '${widget.groupName ?? ''}|${widget.khatmaName ?? ''}'));
+
+              final status = '''🕌 Khatma Progress Update
+
+Group: ${widget.groupName}
+Khatma: ${widget.khatmaName}
+
+📊 Progress: ${completionPercentage.toStringAsFixed(1)}%
+• Completed: $completedPages pages
+• Remaining: $remainingPages pages
+
+👥 Members:
+${(roomDetails?['members'] as List? ?? []).map((member) => "• $member").join("\n")}
+
+✨ App Features:
+• Tajweed highlighting
+• Word-by-word mode
+• Audio recitation
+• Group discussions
+• Progress tracking
+• Multi-language support
+
+Join directly:
+https://qurany-flashcards.web.app/join?code=$encodedData''';
+
+              Clipboard.setData(ClipboardData(text: status));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Copied to clipboard!')),
+              );
+            },
+            child: Text('copy'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Close'),
@@ -1215,6 +1270,8 @@ class _SurahPageState extends State<SurahPage> {
 
   Map<String, dynamic>? roomDetails;
 
+  bool _showTajweedMenu = false; // Add this to your state variables
+
   @override
   void initState() {
     super.initState();
@@ -1364,10 +1421,9 @@ class _SurahPageState extends State<SurahPage> {
     try {
       // Load all required text files
       final mappingText =
-          await rootBundle.loadString('assets/Txt files/page_mapping.txt');
-      final quranText =
-          await rootBundle.loadString('assets/Txt files/quran-uthmani (1).txt');
-
+          await rootBundle.loadString('assets/Txt files/page_ayah_count.txt');
+      final quranText = await rootBundle
+          .loadString('assets/Txt files/quran-tajweed-numbered.txt');
       // Get the appropriate tafsir file based on language
       String tafsirFile;
       switch (widget.selectedLanguage) {
@@ -1491,8 +1547,8 @@ class _SurahPageState extends State<SurahPage> {
           'surah': surah,
           'ayah': ayah,
           'verse': quranMap[mapKey] ?? '',
-          'tafsir': _tafsirMap[mapKey] ?? '',
-          'translation': _translationMap[mapKey] ?? '',
+          'tafsir': _tafsirMap['$surah|$ayah'] ?? '',
+          'translation': _translationMap['$surah|$ayah'] ?? '',
         });
       }
 
@@ -2017,6 +2073,8 @@ class _SurahPageState extends State<SurahPage> {
         GestureDetector(
           onTap: _handleFirstClick,
           child: Scaffold(
+            backgroundColor:
+                Color.fromARGB(255, 255, 248, 238), // Add this line
             appBar: AppBar(
               toolbarHeight:
                   isStartOfSurah ? kToolbarHeight * 1.5 : kToolbarHeight,
@@ -2028,13 +2086,23 @@ class _SurahPageState extends State<SurahPage> {
                     Container(
                       width: double.infinity,
                       alignment: Alignment.center,
-                      child: Text(
-                        _surahBismillah ??
-                            'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
-                        style: TextStyle(
-                          fontFamily: 'Scheherazade',
-                          fontSize: 18,
-                          color: Colors.white70,
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontFamily: 'Scheherazade',
+                            color: Colors.white70,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '',
+                              style: TextStyle(
+                                fontFamily: 'Scheherazade',
+                                fontSize: 18,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -2382,98 +2450,107 @@ class _SurahPageState extends State<SurahPage> {
                                                 SizedBox(
                                                     height:
                                                         getVerticalPadding()),
-                                                RichText(
-                                                  textAlign: TextAlign.justify,
-                                                  textDirection:
-                                                      TextDirection.rtl,
-                                                  text: TextSpan(
-                                                    style: TextStyle(
-                                                      fontFamily:
-                                                          'Scheherazade',
-                                                      fontSize:
-                                                          getQuranFontSize(),
-                                                      height: 1.5,
-                                                      letterSpacing: 0,
-                                                      color: Color(0xFF2B4141),
+                                                Container(
+                                                  decoration: _forgottenAyahs[
+                                                                  widget
+                                                                      .pageNumber]
+                                                              ?.contains(
+                                                                  _currentAyah) ??
+                                                          false
+                                                      ? BoxDecoration(
+                                                          color: Colors.orange
+                                                              .withOpacity(0.2),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        )
+                                                      : null,
+                                                  child: RichText(
+                                                    textAlign:
+                                                        TextAlign.justify,
+                                                    textDirection:
+                                                        TextDirection.rtl,
+                                                    text: TextSpan(
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            'Scheherazade',
+                                                        fontSize:
+                                                            getQuranFontSize(),
+                                                        height: 1.5,
+                                                        letterSpacing: 0,
+                                                        color:
+                                                            Color(0xFF2B4141),
+                                                      ),
+                                                      children: surahAyahs
+                                                          .map((ayah) {
+                                                        final ayahIndex =
+                                                            _pageAyahs.indexOf(
+                                                                    ayah) +
+                                                                1;
+                                                        final isCurrentAyah =
+                                                            ayahIndex ==
+                                                                _currentAyah;
+                                                        final isPreviousAyah =
+                                                            ayahIndex <
+                                                                _currentAyah;
+                                                        final isPartiallyRevealed =
+                                                            _partiallyRevealedAyahs
+                                                                .contains(
+                                                                    ayahIndex);
+                                                        final isFullyRevealed =
+                                                            _fullyRevealedAyahs
+                                                                .contains(
+                                                                    ayahIndex);
+
+                                                        String cleanVerse =
+                                                            ayah['verse']
+                                                                .toString()
+                                                                .replaceAll(
+                                                                    '\n', ' ')
+                                                                .replaceAll(
+                                                                    RegExp(
+                                                                        r'\s+'),
+                                                                    ' ');
+
+                                                        String displayText = '';
+                                                        if (isPreviousAyah) {
+                                                          displayText =
+                                                              cleanVerse;
+                                                        } else if (isCurrentAyah) {
+                                                          if (isFullyRevealed) {
+                                                            displayText =
+                                                                cleanVerse;
+                                                          } else if (isPartiallyRevealed) {
+                                                            displayText =
+                                                                cleanVerse.split(
+                                                                        ' ')[0] +
+                                                                    ' ...';
+                                                          }
+                                                        }
+
+                                                        return TextSpan(
+                                                          children: [
+                                                            TajweedParser
+                                                                .parseTajweedText(
+                                                              displayText,
+                                                              getQuranFontSize(),
+                                                            ),
+                                                            TextSpan(
+                                                              text:
+                                                                  ' ﴿${ayah['ayah']}﴾ ',
+                                                              style: TextStyle(
+                                                                color: isPreviousAyah ||
+                                                                        isCurrentAyah
+                                                                    ? Color(
+                                                                        0xFF2B4141)
+                                                                    : Colors
+                                                                        .transparent,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }).toList(),
                                                     ),
-                                                    children:
-                                                        surahAyahs.map((ayah) {
-                                                      final ayahIndex =
-                                                          _pageAyahs.indexOf(
-                                                                  ayah) +
-                                                              1;
-                                                      final isPartiallyRevealed =
-                                                          _partiallyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isFullyRevealed =
-                                                          _fullyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isRevealed =
-                                                          isPartiallyRevealed ||
-                                                              isFullyRevealed;
-
-                                                      return TextSpan(
-                                                        children: [
-                                                          // Ayah text with dynamic reveal
-                                                          TextSpan(
-                                                            text: _showFirstWordOnly
-                                                                ? (isFullyRevealed
-                                                                    ? ayah[
-                                                                        'verse']
-                                                                    : (isPartiallyRevealed
-                                                                        ? ayah['verse'].toString().split(' ')[0] +
-                                                                            ' ...'
-                                                                        : ''))
-                                                                : ayah['verse'],
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  'Scheherazade',
-                                                              fontSize:
-                                                                  getQuranFontSize(),
-                                                              height: 1.5,
-                                                              letterSpacing: 0,
-                                                              color: _showFirstWordOnly
-                                                                  ? (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white)
-                                                                  : (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white),
-                                                            ),
-                                                          ),
-                                                          // Use a background color to highlight the number
-
-                                                          TextSpan(
-                                                            text:
-                                                                ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  'Scheherazade',
-                                                              fontSize:
-                                                                  getQuranFontSize() *
-                                                                      0.8,
-                                                              color: Color(
-                                                                  0xFF417D7A),
-// Light gray background
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    }).toList(),
                                                   ),
                                                 ),
                                                 if (surahAyahs.isNotEmpty &&
@@ -2537,91 +2614,268 @@ class _SurahPageState extends State<SurahPage> {
                                                     textAlign:
                                                         TextAlign.justify,
                                                   ),
-                                                  // Add this new section for comments
-                                                  SizedBox(height: 8),
-                                                  if (widget.groupName !=
-                                                      null) // Only show comments for group reading
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        StreamBuilder<
-                                                            List<Comment>>(
-                                                          stream: CommentsService()
-                                                              .getCommentsStream(
-                                                            pageNumber: widget
-                                                                .pageNumber,
-                                                            groupId: widget
-                                                                .groupName!,
-                                                          ),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            final commentCount =
-                                                                snapshot.data
-                                                                        ?.length ??
-                                                                    0;
-                                                            return TextButton
-                                                                .icon(
-                                                              icon: Icon(
-                                                                Icons
-                                                                    .comment_outlined,
-                                                                color: Color(
-                                                                    0xFF417D7A),
-                                                                size: 20,
-                                                              ),
-                                                              label: Text(
-                                                                'Thoughts : تدبر ($commentCount)',
-                                                                style:
-                                                                    TextStyle(
+                                                ],
+                                                Container(
+                                                  child: Column(
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          ElevatedButton.icon(
+                                                            icon: Icon(
+                                                              _showTajweedMenu
+                                                                  ? Icons
+                                                                      .visibility_off
+                                                                  : Icons
+                                                                      .visibility,
+                                                              color: Color(
+                                                                  0xFF417D7A),
+                                                            ),
+                                                            label: Text(
+                                                              _showTajweedMenu
+                                                                  ? 'Hide Tajweed Menu'
+                                                                  : 'Show Tajweed Menu',
+                                                              style: TextStyle(
+                                                                  color: Color(
+                                                                      0xFF417D7A)),
+                                                            ),
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors
+                                                                      .transparent,
+                                                              elevation: 0,
+                                                              side: BorderSide(
                                                                   color: Color(
                                                                       0xFF417D7A),
-                                                                  fontSize: 14,
-                                                                ),
+                                                                  width: 2),
+                                                            ),
+                                                            onPressed: () {
+                                                              setState(() {
+                                                                _showTajweedMenu =
+                                                                    !_showTajweedMenu;
+                                                              });
+                                                            },
+                                                          ),
+                                                          if (widget
+                                                                  .groupName !=
+                                                              null)
+                                                            StreamBuilder<
+                                                                List<Comment>>(
+                                                              stream: CommentsService()
+                                                                  .getCommentsStream(
+                                                                pageNumber: widget
+                                                                    .pageNumber,
+                                                                groupId: widget
+                                                                    .groupName!,
                                                               ),
-                                                              style: TextButton
-                                                                  .styleFrom(
-                                                                shape:
-                                                                    RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              8),
-                                                                  side: BorderSide(
+                                                              builder: (context,
+                                                                  snapshot) {
+                                                                final commentCount =
+                                                                    snapshot.data
+                                                                            ?.length ??
+                                                                        0;
+                                                                return TextButton
+                                                                    .icon(
+                                                                  icon: Icon(
+                                                                    Icons
+                                                                        .comment_outlined,
+                                                                    color: Color(
+                                                                        0xFF417D7A),
+                                                                    size: 20,
+                                                                  ),
+                                                                  label: Text(
+                                                                    'Thoughts : تدبر ($commentCount)',
+                                                                    style:
+                                                                        TextStyle(
                                                                       color: Color(
                                                                           0xFF417D7A),
-                                                                      width: 1),
-                                                                ),
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
+                                                                      fontSize:
+                                                                          14,
+                                                                    ),
+                                                                  ),
+                                                                  style: TextButton
+                                                                      .styleFrom(
+                                                                    shape:
+                                                                        RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              8),
+                                                                      side: BorderSide(
+                                                                          color: Color(
+                                                                              0xFF417D7A),
+                                                                          width:
+                                                                              1),
+                                                                    ),
+                                                                    padding: EdgeInsets.symmetric(
                                                                         horizontal:
                                                                             12,
                                                                         vertical:
                                                                             8),
-                                                              ),
-                                                              onPressed: () {
-                                                                showDialog(
-                                                                  context:
-                                                                      context,
-                                                                  builder:
-                                                                      (context) =>
-                                                                          CommentsDialog(
-                                                                    pageNumber:
-                                                                        widget
-                                                                            .pageNumber,
-                                                                    groupId: widget
-                                                                        .groupName!,
-                                                                    userName: widget
-                                                                            .userName ??
-                                                                        'Anonymous',
                                                                   ),
+                                                                  onPressed:
+                                                                      () {
+                                                                    showDialog(
+                                                                      context:
+                                                                          context,
+                                                                      builder:
+                                                                          (context) =>
+                                                                              CommentsDialog(
+                                                                        pageNumber:
+                                                                            widget.pageNumber,
+                                                                        groupId:
+                                                                            widget.groupName!,
+                                                                        userName:
+                                                                            widget.userName ??
+                                                                                'Anonymous',
+                                                                      ),
+                                                                    );
+                                                                  },
                                                                 );
                                                               },
-                                                            );
-                                                          },
+                                                            ),
+                                                        ],
+                                                      ),
+                                                      if (_showTajweedMenu) ...[
+                                                        SizedBox(height: 8),
+                                                        Text(
+                                                          'Click on any rule to toggle it on/off\nاضغط على أي قاعدة لتشغيلها أو إيقافها',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors
+                                                                .grey[600],
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 16),
+                                                        Wrap(
+                                                          spacing: 8,
+                                                          runSpacing: 8,
+                                                          alignment:
+                                                              WrapAlignment
+                                                                  .center,
+                                                          children: [
+                                                            // Your existing Tajweed toggle buttons go here
+                                                            Wrap(
+                                                              spacing: 8,
+                                                              runSpacing: 8,
+                                                              alignment:
+                                                                  WrapAlignment
+                                                                      .center,
+                                                              children: [
+                                                                _buildTajweedToggle(
+                                                                  'Necessary Prolongation\nمد لازم',
+                                                                  TajweedColor
+                                                                      .darkRed,
+                                                                  'necessary',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['necessary'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Obligatory Prolongation\nمد واجب متصل',
+                                                                  TajweedColor
+                                                                      .bloodRed,
+                                                                  'obligatory',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['obligatory'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Permissible Prolongation\nمد جائز منفصل',
+                                                                  TajweedColor
+                                                                      .cuminRed,
+                                                                  'permissible',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['permissible'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Silent Letters\nحروف لا تنطق',
+                                                                  TajweedColor
+                                                                      .gray,
+                                                                  'silent',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['silent'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Qalqalah\nقلقلة',
+                                                                  TajweedColor
+                                                                      .lightBlue,
+                                                                  'qalqalah',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['qalqalah'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Nasalization\nغنة',
+                                                                  TajweedColor
+                                                                      .green,
+                                                                  'nasalization',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['nasalization'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Idgham\nادغام',
+                                                                  TajweedColor
+                                                                      .teal,
+                                                                  'idgham',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['idgham'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Wasl\nوصل',
+                                                                  TajweedColor
+                                                                      .olive,
+                                                                  'wasl',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['wasl'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Combined Letters\nحروف مركبة',
+                                                                  TajweedColor
+                                                                      .indigo,
+                                                                  'combined',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['combined'] =
+                                                                          value),
+                                                                ),
+                                                                _buildTajweedToggle(
+                                                                  'Idgam/guana/ahkam\nادغام/غنة/احكام',
+                                                                  TajweedColor
+                                                                      .brown,
+                                                                  'ahkam',
+                                                                  (value) => setState(() =>
+                                                                      TajweedParser
+                                                                              .tajweedColorToggles['ahkam'] =
+                                                                          value),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            // ... rest of your toggle buttons ...
+                                                          ],
                                                         ),
                                                       ],
-                                                    ),
-                                                ],
+                                                    ],
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -2839,6 +3093,34 @@ class _SurahPageState extends State<SurahPage> {
           ),
         if (widget.isGroupReading) _buildRoomInfo(),
       ],
+    );
+  }
+
+  Widget _buildTajweedToggle(
+      String label, Color color, String key, Function(bool) onToggle) {
+    return GestureDetector(
+      onTap: () {
+        onToggle(!TajweedParser.tajweedColorToggles[key]!);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: TajweedParser.tajweedColorToggles[key]!
+              ? color
+              : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color:
+                TajweedParser.tajweedColorToggles[key]! ? Colors.white : color,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }
