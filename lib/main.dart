@@ -2039,7 +2039,8 @@ class _SurahPageState extends State<SurahPage> {
                           ),
                           children: [
                             TextSpan(
-                              text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                              text:
+                                  'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ﴿١﴾ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
                               style: TextStyle(
                                 fontFamily: 'Scheherazade',
                                 fontSize: 18,
@@ -2439,30 +2440,59 @@ class _SurahPageState extends State<SurahPage> {
                                                               final ayahIndex =
                                                                   i + 1;
 
-                                                              // Check if ayah should be shown
-                                                              if (_partiallyRevealedAyahs
-                                                                  .contains(
-                                                                      ayahIndex)) {
-                                                                // Show first word only
-                                                                String
-                                                                    firstWord =
-                                                                    ayah['verse']
-                                                                        .toString()
-                                                                        .split(
-                                                                            ' ')[0];
-                                                                fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ $firstWord ... ';
-                                                              }
                                                               if (_fullyRevealedAyahs
                                                                   .contains(
                                                                       ayahIndex)) {
-                                                                // Show full ayah
+                                                                // Second click - show full ayah
+                                                                String cleanVerse = ayah[
+                                                                        'verse']
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        '\n',
+                                                                        ' ')
+                                                                    .replaceAll(
+                                                                        RegExp(
+                                                                            r'\s+'),
+                                                                        ' ');
                                                                 fullText +=
-                                                                    '﴿${ayah['ayah']}﴾ ${ayah['verse']} ';
+                                                                    '﴿${ayah['ayah']}﴾ $cleanVerse ';
+                                                              } else if (_partiallyRevealedAyahs
+                                                                  .contains(
+                                                                      ayahIndex)) {
+                                                                // First click - show first word
+                                                                String firstWord = ayah[
+                                                                        'verse']
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        '\n',
+                                                                        ' ')
+                                                                    .split(
+                                                                        ' ')[0];
+                                                                fullText +=
+                                                                    '﴿${ayah['ayah']}﴾ $firstWord ... ';
+                                                              } else if (_currentAyah >
+                                                                  ayahIndex) {
+                                                                // Show full text for previous ayahs
+                                                                String cleanVerse = ayah[
+                                                                        'verse']
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        '\n',
+                                                                        ' ')
+                                                                    .replaceAll(
+                                                                        RegExp(
+                                                                            r'\s+'),
+                                                                        ' ');
+                                                                fullText +=
+                                                                    '﴿${ayah['ayah']}﴾ $cleanVerse ';
                                                               }
                                                             }
+
                                                             return fullText
-                                                                .trim();
+                                                                    .isEmpty
+                                                                ? 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ﴿﴾ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'
+                                                                : fullText
+                                                                    .trim();
                                                           })(),
                                                           getQuranFontSize(),
                                                         ),
@@ -2707,21 +2737,11 @@ class _SurahPageState extends State<SurahPage> {
                                                                 _buildTajweedToggle(
                                                                   'Permissible Prolongation\nمد جائز منفصل',
                                                                   TajweedColor
-                                                                      .orangeRed,
+                                                                      .cuminRed,
                                                                   'permissible',
                                                                   (value) => setState(() =>
                                                                       TajweedParser
                                                                               .tajweedColorToggles['permissible'] =
-                                                                          value),
-                                                                ),
-                                                                _buildTajweedToggle(
-                                                                  'Normal Prolongation\nمد طبيعي',
-                                                                  TajweedColor
-                                                                      .orangeRed,
-                                                                  'normal',
-                                                                  (value) => setState(() =>
-                                                                      TajweedParser
-                                                                              .tajweedColorToggles['normal'] =
                                                                           value),
                                                                 ),
                                                                 _buildTajweedToggle(
@@ -2732,16 +2752,6 @@ class _SurahPageState extends State<SurahPage> {
                                                                   (value) => setState(() =>
                                                                       TajweedParser
                                                                               .tajweedColorToggles['silent'] =
-                                                                          value),
-                                                                ),
-                                                                _buildTajweedToggle(
-                                                                  'Emphatic R (ra)\nتفخيم الراء',
-                                                                  TajweedColor
-                                                                      .darkBlue,
-                                                                  'emphatic',
-                                                                  (value) => setState(() =>
-                                                                      TajweedParser
-                                                                              .tajweedColorToggles['emphatic'] =
                                                                           value),
                                                                 ),
                                                                 _buildTajweedToggle(
@@ -2795,7 +2805,7 @@ class _SurahPageState extends State<SurahPage> {
                                                                           value),
                                                                 ),
                                                                 _buildTajweedToggle(
-                                                                  'Ahkam\nاحكام',
+                                                                  'Idgam/guana/ahkam\nادغام/غنة/احكام',
                                                                   TajweedColor
                                                                       .brown,
                                                                   'ahkam',
