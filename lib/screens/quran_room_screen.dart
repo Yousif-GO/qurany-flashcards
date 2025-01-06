@@ -8,6 +8,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert' show utf8, base64Url;
+import 'dart:math';
 
 class QuranRoomScreen extends StatefulWidget {
   final AppLanguage selectedLanguage;
