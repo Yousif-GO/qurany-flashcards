@@ -28,6 +28,10 @@ import '../models/comment.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/main_surah_view.dart';
 import '../pages/quran_image_page.dart';
+import '../services/version_service.dart';
+import '../utils/khatma_utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 
 enum AppLanguage {
   arabic,
@@ -48,6 +52,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.web,
     );
+    await VersionService.initialize();
   } else if (Platform.isAndroid) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.android,
@@ -534,6 +539,14 @@ class _SimpleListState extends State<SimpleList> {
 
   // Add the new dialog methods
   void _showRoomInfoDialog() {
+    if (widget.groupName == null || widget.khatmaName == null) return;
+
+    final roomStatus = KhatmaUtils.generateKhatmaStatus({
+      ...?roomDetails,
+      'groupName': widget.groupName,
+      'khatmaName': widget.khatmaName,
+    });
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -557,26 +570,21 @@ class _SimpleListState extends State<SimpleList> {
                 ),
               ),
               Divider(),
-              Text(
-                'Members',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              ...(roomDetails?['members'] as List? ?? []).map(
-                (member) => ListTile(
-                  leading: Icon(Icons.person_outline),
-                  title: Text(member),
-                ),
-              ),
-              Divider(),
-              Text(
-                'Recently Completed Pages',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              ..._getRecentCompletions(),
+              SelectableText(roomStatus),
             ],
           ),
         ),
         actions: [
+          TextButton.icon(
+            icon: Icon(Icons.copy),
+            label: Text('Copy Status'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: roomStatus));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Status copied to clipboard!')),
+              );
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Close'),
@@ -644,6 +652,88 @@ class _SimpleListState extends State<SimpleList> {
     );
   }
 
+  // Add this field
+  Widget _buildThoughtsButton() {
+    if (widget.groupName == null) return Container();
+
+    return StreamBuilder<Map<int, int>>(
+      stream: _getCommentsCountStream(),
+      builder: (context, snapshot) {
+        final commentsPerPage = snapshot.data ?? {};
+        final totalComments =
+            commentsPerPage.values.fold(0, (sum, count) => sum + count);
+
+        return TextButton.icon(
+          icon: Icon(Icons.comment_outlined, color: Colors.white),
+          label: Text(
+            'Thoughts ($totalComments)',
+            style: TextStyle(color: Colors.white),
+          ),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Pages with Thoughts'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: commentsPerPage.entries
+                        .where((e) => e.value > 0)
+                        .toList()
+                        .sorted((a, b) => b.value.compareTo(a.value))
+                        .map((e) => ListTile(
+                              leading: Icon(Icons.comment),
+                              title: Text('Page ${e.key}'),
+                              trailing: Text('${e.value} thoughts'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => QuranImagePage(
+                                      pageNumber: e.key,
+                                      groupName: widget.groupName,
+                                      khatmaName: widget.khatmaName,
+                                      userName: widget.userName,
+                                      isGroupReading: true,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ))
+                        .toList(),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    child: Text('Close'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Stream<Map<int, int>> _getCommentsCountStream() {
+    return FirebaseFirestore.instance
+        .collection('quranRooms')
+        .doc(widget.groupName)
+        .collection('comments')
+        .snapshots()
+        .map((snapshot) {
+      Map<int, int> counts = {};
+      for (var doc in snapshot.docs) {
+        final pageNumber = doc.data()['pageNumber'] as int;
+        counts[pageNumber] = (counts[pageNumber] ?? 0) + 1;
+      }
+      return counts;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final surahPages = _getSurahPages();
@@ -653,70 +743,102 @@ class _SimpleListState extends State<SimpleList> {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
-        actions: [
-          // Language Selection Button
-          IconButton(
-            icon: Icon(Icons.language, color: Colors.white),
-            tooltip: 'Change Language',
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => LanguageSelectionPage(),
+        centerTitle: false,
+        toolbarHeight: 60,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final showText =
+                constraints.maxWidth > 600; // Adjust breakpoint as needed
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  // Core Icons - Always visible
+                  IconButton(
+                    icon: Icon(Icons.language, color: Colors.white),
+                    tooltip: 'Change Language',
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.help_outline, color: Colors.white),
+                    tooltip: 'Tutorial',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TutorialPage(
+                          selectedLanguage: widget.selectedLanguage,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.feedback_outlined, color: Colors.white),
+                    tooltip: 'Send Feedback',
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (context) => FeedbackDialog(),
+                    ),
+                  ),
+                  // Reading Mode Buttons
+                  IconButton(
+                    icon: Icon(Icons.group, color: Colors.white),
+                    tooltip: widget.groupName != null
+                        ? '${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}'
+                        : 'Group Reading',
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => QuranRoomScreen(
+                          selectedLanguage: widget.selectedLanguage,
+                          isGroupReading: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.person, color: Colors.white),
+                    tooltip: 'Private Reading',
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => SimpleList(
+                          selectedLanguage: widget.selectedLanguage,
+                          isGroupReading: false,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Comments Counter - Always visible if in group
+                  if (widget.groupName != null) _buildThoughtsButton(),
+                  // Optional text labels
+                  if (showText) ...[
+                    if (widget.groupName != null)
+                      Text(
+                        ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                  ],
+                  SizedBox(width: 8),
+                ],
               ),
-            ),
+            );
+          },
+        ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(2),
+          child: LinearProgressIndicator(
+            backgroundColor: Colors.white24,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            value: 0,
           ),
-          // Tutorial Button
-          IconButton(
-            icon: Icon(Icons.help_outline, color: Colors.white),
-            tooltip: 'Tutorial',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => TutorialPage(
-                  selectedLanguage: widget.selectedLanguage,
-                ),
-              ),
-            ),
-          ),
-          // Feedback Button
-          IconButton(
-            icon: Icon(Icons.feedback_outlined, color: Colors.white),
-            tooltip: 'Send Feedback',
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => FeedbackDialog(),
-            ),
-          ),
-          // Existing Group Reading Button
-          TextButton.icon(
-            icon: Icon(Icons.menu_book, color: Colors.white),
-            label: Text(
-              widget.groupName != null
-                  ? '${widget.groupName} - ${widget.khatmaName}'
-                  : 'Read with Group',
-              style: TextStyle(color: Colors.white),
-            ),
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => QuranRoomScreen(
-                  selectedLanguage: widget.selectedLanguage,
-                  isGroupReading: true,
-                ),
-              ),
-            ),
-          ),
-          TextButton.icon(
-            icon: Icon(Icons.menu_book, color: Colors.white),
-            label: Text('Read Solo', style: TextStyle(color: Colors.white)),
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => SimpleList(
-                  selectedLanguage: widget.selectedLanguage,
-                  isGroupReading: false,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
       body: ListView.builder(
         itemCount: 114,
