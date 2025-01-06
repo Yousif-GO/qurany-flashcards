@@ -118,7 +118,8 @@ This project is licensed under a Non-Commercial, Non-Profit Use License - see th
 
 - Quran text source: [https://globalquran.com/download/]
 - Audio recitations: [https://everyayah.com/]
-- Quran images [https://easyquran.com/en/hafs-download-page/?uri=1]   
+- Quran images [https://easyquran.com/en/hafs-download-page/?uri=1]
+- fonts [https://fonts.qurancomplex.gov.sa/]
 - Contributors and testers 
 
 ## Contact
