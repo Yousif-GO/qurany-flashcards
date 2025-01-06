@@ -1,11 +1,11 @@
 enum AppLanguage {
-  english,
   arabic,
+  english,
+  urdu,
+  indonesian,
   spanish,
   hindi,
   russian,
   chinese,
   turkish,
-  urdu,
-  indonesian,
 }
