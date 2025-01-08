@@ -21,7 +21,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import '../services/firebase_service.dart';
-import '../screens/quran_room_screen.dart';
 import 'dart:async'; // Add this import for StreamController
 import '../widgets/feedback_dialog.dart';
 import '../firebase_options.dart';
