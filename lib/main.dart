@@ -32,6 +32,7 @@ import '../services/version_service.dart';
 import '../utils/khatma_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
+import '../screens/legal_pages.dart';
 
 enum AppLanguage {
   arabic,
@@ -156,6 +157,10 @@ class MyApp extends StatelessWidget {
             isGroupReading: false,
           ),
         );
+      },
+      routes: {
+        '/terms': (context) => TermsOfServicePage(),
+        '/privacy': (context) => PrivacyPolicyPage(),
       },
     );
   }
@@ -450,7 +455,7 @@ class _SimpleListState extends State<SimpleList> {
     AppLanguage.urdu: {
       'auto_play_enabled': 'آٹو-پلے فعال کر دیا گیا',
       'auto_play_disabled': 'آٹو-پلے غیر فعال کر دیا گیا',
-      'show_first_word_enabled': 'پہلا الفاظ دکھانے کا موڈ فعال',
+      'show_first_word_enabled': 'پہلا الفاظ دکھانے کا موڈڈ فعال',
       'show_first_word_disabled': 'پہلا الفاظ دکھانے کا موڈ غیر فعال',
       'ayahs_for_review': 'جدول کے لئے آیتیں:',
       'page': 'صفحہ',
@@ -789,6 +794,16 @@ class _SimpleListState extends State<SimpleList> {
                     ),
                   ),
                   // Reading Mode Buttons
+                  IconButton(
+                    icon: Icon(Icons.description, color: Colors.white),
+                    tooltip: 'Terms of Service',
+                    onPressed: () => Navigator.pushNamed(context, '/terms'),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.privacy_tip, color: Colors.white),
+                    tooltip: 'Privacy Policy',
+                    onPressed: () => Navigator.pushNamed(context, '/privacy'),
+                  ),
                   IconButton(
                     icon: Icon(Icons.group, color: Colors.white),
                     tooltip: widget.groupName != null

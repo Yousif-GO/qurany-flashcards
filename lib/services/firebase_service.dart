@@ -120,4 +120,12 @@ class FirebaseService {
 
     return doc.data() ?? {};
   }
+
+  Future<bool> checkGroupExists(String groupId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('quranRooms')
+        .where('groupName', isEqualTo: groupId)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
 }
