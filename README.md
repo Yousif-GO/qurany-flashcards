@@ -118,7 +118,7 @@ This project is licensed under a Non-Commercial, Non-Profit Use License - see th
 
 ## Acknowledgments
 
-- Quran text source: [https://globalquran.com/download/]
+- Quran text source: [https://globalquran.com/download/] , [https://tanzil.net/download/]
 - Audio recitations: [https://everyayah.com/]
 - Quran images [https://easyquran.com/en/hafs-download-page/?uri=1]
 - fonts [https://fonts.qurancomplex.gov.sa/]
