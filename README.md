@@ -86,9 +86,11 @@ A free, feature-rich Quran app designed for individual and group reading.
 
 ## Features in Development
 
-- [ ] Offline mode
+- [ ] voice recognition for next ayah reveal 
+- [ ] page zoom for elders 
+- [x] Offline mode
 - [ ] Advanced progress analytics
-- [ ] Social sharing features
+- [x] Social sharing features
 - [ ] Custom reading plans
 - [ ] Advanced search functionality
 
