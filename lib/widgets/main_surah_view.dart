@@ -673,13 +673,28 @@ class _MainSurahViewState extends State<MainSurahView> {
         });
       }
 
+      // Add first ayah of next page
+      int nextPage = widget.pageNumber == 604 ? 1 : widget.pageNumber + 1;
+      final nextPageAyahs = _pageMapping[nextPage.toString()] ?? [];
+      if (nextPageAyahs.isNotEmpty) {
+        final firstNextAyah = nextPageAyahs.first.split('|');
+        final nextSurah = int.parse(firstNextAyah[0]);
+        final nextAyah = int.parse(firstNextAyah[1]);
+        final nextMapKey = '$nextSurah|$nextAyah';
+
+        ayahs.add({
+          'surah': nextSurah,
+          'ayah': nextAyah,
+          'verse': quranMap[nextMapKey] ?? '',
+          'tafsir': _tafsirMap[nextMapKey] ?? '',
+          'translation': _translationMap[nextMapKey] ?? '',
+          'isNextPage': true, // Mark this ayah as belonging to next page
+        });
+      }
+
       setState(() {
         _pageAyahs = ayahs;
-        if (ayahs.isNotEmpty) {
-          _currentAyahData = [ayahs.first];
-        } else {
-          _currentAyahData = [];
-        }
+        _currentAyahData = [ayahs.first];
         _isLoading = false;
       });
     } catch (e) {
@@ -1038,6 +1053,8 @@ class _MainSurahViewState extends State<MainSurahView> {
           _isPlaying = false;
         });
       }
+    } else if (reviewAyahs.isEmpty) {
+      _navigateToNextPage;
     }
   }
 
@@ -1570,7 +1587,6 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                       fontSize:
                                                           getQuranFontSize(),
                                                       height: 1.5,
-                                                      letterSpacing: 0,
                                                       color: Color(0xFF2B4141),
                                                     ),
                                                     children:
@@ -1590,6 +1606,52 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                       final isRevealed =
                                                           isPartiallyRevealed ||
                                                               isFullyRevealed;
+
+                                                      if (ayah['isNextPage'] ==
+                                                          true) {
+                                                        return TextSpan(
+                                                          children: [
+                                                            TextSpan(
+                                                              text:
+                                                                  '\n\n━━━━ Next Page ━━━━\n\n',
+                                                              style: TextStyle(
+                                                                color: Color(
+                                                                    0xFF417D7A),
+                                                                fontSize:
+                                                                    getQuranFontSize() *
+                                                                        0.6,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text: _showFirstWordOnly
+                                                                  ? (isFullyRevealed
+                                                                      ? ayah[
+                                                                          'verse']
+                                                                      : (isPartiallyRevealed
+                                                                          ? ayah['verse'].toString().split(' ')[0] +
+                                                                              ' ...'
+                                                                          : ''))
+                                                                  : (isRevealed
+                                                                      ? ayah[
+                                                                          'verse']
+                                                                      : ''),
+                                                              style: TextStyle(
+                                                                color: isRevealed
+                                                                    ? Colors.grey[
+                                                                        600]
+                                                                    : Colors
+                                                                        .white,
+                                                                fontStyle:
+                                                                    FontStyle
+                                                                        .italic,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }
 
                                                       return TextSpan(
                                                         children: [
