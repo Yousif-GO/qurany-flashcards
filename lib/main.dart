@@ -28,7 +28,6 @@ import '../models/comment.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/main_surah_view.dart';
 import '../pages/quran_image_page.dart';
-import '../services/version_service.dart';
 import '../utils/khatma_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
@@ -53,7 +52,6 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.web,
     );
-    await VersionService.initialize();
   } else if (Platform.isAndroid) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.android,
