@@ -1,7 +1,7 @@
 name: qurany_cards_pro
 description: "Qurany - A Quran memorization app using spaced repetition system (SRS) to help users effectively memorize the Quran through interactive features, audio recitations, and smart review scheduling."
 publish_to: 'none'
-version: 1.0.1+3
+version: 1.0.0+4
 
 environment:
   sdk: '^3.5.0'

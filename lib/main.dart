@@ -1052,12 +1052,12 @@ class _SimpleListState extends State<SimpleList> {
                           children: [
                             ListTile(
                               leading: Icon(Icons.text_fields),
-                              title: Text('Text View'),
+                              title: Text('Memorize (تحفيظ)'),
                               onTap: () => Navigator.pop(context, 'text'),
                             ),
                             ListTile(
                               leading: Icon(Icons.image),
-                              title: Text('Image (تجويد) View'),
+                              title: Text('Read (تلاوة)'),
                               onTap: () => Navigator.pop(context, 'image'),
                             ),
                           ],
