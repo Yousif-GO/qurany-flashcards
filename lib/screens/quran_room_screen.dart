@@ -79,7 +79,25 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: Text(_isCreating ? 'Create Khatma' : 'Join Khatma'),
+            backgroundColor: Color(0xFF417D7A),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => SimpleList(
+                    selectedLanguage: widget.selectedLanguage,
+                    isGroupReading: false,
+                  ),
+                ),
+              ),
+            ),
+            title: Text(
+              _isCreating ? 'Create Khatma' : 'Join Khatma',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             centerTitle: true,
             actions: [
               IconButton(
@@ -101,12 +119,16 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
                 ),
               ),
             ],
+            elevation: 2,
           ),
           body: SingleChildScrollView(
             child: Column(
               children: [
                 _buildForm(),
-                Divider(height: 32),
+                Divider(
+                  height: 32,
+                  color: Color(0xFF417D7A).withOpacity(0.2),
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -115,7 +137,8 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
                         "Don't see your group?",
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[600],
+                          color: Color(0xFF417D7A),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       SizedBox(height: 8),
@@ -123,9 +146,18 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
                         onPressed: () =>
                             setState(() => _isCreating = !_isCreating),
                         child: Text(
-                            _isCreating ? 'Join Instead' : 'Create New Group'),
+                          _isCreating ? 'Join Instead' : 'Create New Group',
+                          style: TextStyle(
+                            color: Color(0xFF417D7A),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: Size(double.infinity, 48),
+                          side: BorderSide(color: Color(0xFF417D7A)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ],
@@ -138,7 +170,11 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
         if (_isLoading)
           Container(
             color: Colors.black54,
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF417D7A)),
+              ),
+            ),
           ),
       ],
     );
@@ -384,10 +420,11 @@ Just read and make dua 🤲''';
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    InputDecoration? decoration,
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: label),
+      decoration: decoration,
       validator: (value) {
         if (value?.isEmpty ?? true) {
           return 'Please enter $label';
@@ -411,21 +448,69 @@ Just read and make dua 🤲''';
             _buildTextField(
               label: 'Group Name',
               controller: _groupNameController,
+              decoration: InputDecoration(
+                labelText: 'Group Name',
+                labelStyle: TextStyle(color: Color(0xFF417D7A)),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF417D7A), width: 2),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Color(0xFF417D7A).withOpacity(0.5)),
+                ),
+              ),
             ),
             SizedBox(height: 16),
             _buildTextField(
               label: 'Khatma Name',
               controller: _khatmaNameController,
+              decoration: InputDecoration(
+                labelText: 'Khatma Name',
+                labelStyle: TextStyle(color: Color(0xFF417D7A)),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF417D7A), width: 2),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Color(0xFF417D7A).withOpacity(0.5)),
+                ),
+              ),
             ),
             SizedBox(height: 16),
             _buildTextField(
               label: 'Your Name',
               controller: _userNameController,
+              decoration: InputDecoration(
+                labelText: 'Your Name',
+                labelStyle: TextStyle(color: Color(0xFF417D7A)),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF417D7A), width: 2),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Color(0xFF417D7A).withOpacity(0.5)),
+                ),
+              ),
             ),
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: _handleSubmit,
-              child: Text(_isCreating ? 'Create Room' : 'Join Room'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF417D7A),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 2,
+              ),
+              child: Text(
+                _isCreating ? 'Create Room' : 'Join Room',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),

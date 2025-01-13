@@ -158,6 +158,39 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
+      home: WillPopScope(
+        onWillPop: () async {
+          if (Navigator.of(navigatorKey.currentContext!).canPop()) {
+            return true; // Allow normal back navigation
+          }
+          // Show exit confirmation when on main list
+          return await showDialog(
+                context: navigatorKey.currentContext!,
+                builder: (context) => AlertDialog(
+                  title: Text('Exit App?'),
+                  content: Text('Are you sure you want to exit?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text('Exit'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        },
+        child: SimpleList(
+          selectedLanguage: AppLanguage.values.firstWhere(
+            (e) => e.toString() == (initialLanguage ?? 'AppLanguage.english'),
+            orElse: () => AppLanguage.english,
+          ),
+          isGroupReading: false,
+        ),
+      ),
       routes: {
         '/terms': (context) => TermsOfServicePage(),
         '/privacy': (context) => PrivacyPolicyPage(),
@@ -759,52 +792,13 @@ class _SimpleListState extends State<SimpleList> {
             : null,
         title: LayoutBuilder(
           builder: (context, constraints) {
-            final showText =
-                constraints.maxWidth > 600; // Adjust breakpoint as needed
+            final showText = constraints.maxWidth > 600;
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  // Core Icons - Always visible
-                  IconButton(
-                    icon: Icon(Icons.language, color: Colors.white),
-                    tooltip: 'Change Language',
-                    onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.help_outline, color: Colors.white),
-                    tooltip: 'Tutorial',
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => TutorialPage(
-                          selectedLanguage: widget.selectedLanguage,
-                        ),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.feedback_outlined, color: Colors.white),
-                    tooltip: 'Send Feedback',
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (context) => FeedbackDialog(),
-                    ),
-                  ),
-                  // Reading Mode Buttons
-                  IconButton(
-                    icon: Icon(Icons.description, color: Colors.white),
-                    tooltip: 'Terms of Service',
-                    onPressed: () => Navigator.pushNamed(context, '/terms'),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.privacy_tip, color: Colors.white),
-                    tooltip: 'Privacy Policy',
-                    onPressed: () => Navigator.pushNamed(context, '/privacy'),
-                  ),
+                  // Main Reading Mode Buttons
                   IconButton(
                     icon: Icon(Icons.group, color: Colors.white),
                     tooltip: widget.groupName != null
@@ -831,22 +825,108 @@ class _SimpleListState extends State<SimpleList> {
                       ),
                     ),
                   ),
-                  // Comments Counter - Always visible if in group
+                  // Comments Counter
                   if (widget.groupName != null) _buildThoughtsButton(),
-                  // Optional text labels
-                  if (showText) ...[
-                    if (widget.groupName != null)
-                      Text(
-                        ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                  ],
+                  // Group Name
+                  if (showText && widget.groupName != null)
+                    Text(
+                      ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   SizedBox(width: 8),
                 ],
               ),
             );
           },
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              switch (value) {
+                case 'language':
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                        builder: (context) => LanguageSelectionPage()),
+                  );
+                  break;
+                case 'tutorial':
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => TutorialPage(
+                        selectedLanguage: widget.selectedLanguage,
+                      ),
+                    ),
+                  );
+                  break;
+                case 'feedback':
+                  showDialog(
+                    context: context,
+                    builder: (context) => FeedbackDialog(),
+                  );
+                  break;
+                case 'terms':
+                  Navigator.pushNamed(context, '/terms');
+                  break;
+                case 'privacy':
+                  Navigator.pushNamed(context, '/privacy');
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                value: 'language',
+                child: Row(
+                  children: [
+                    Icon(Icons.language, color: Color(0xFF417D7A)),
+                    SizedBox(width: 8),
+                    Text('Change Language'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'tutorial',
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline, color: Color(0xFF417D7A)),
+                    SizedBox(width: 8),
+                    Text('Tutorial'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'feedback',
+                child: Row(
+                  children: [
+                    Icon(Icons.feedback_outlined, color: Color(0xFF417D7A)),
+                    SizedBox(width: 8),
+                    Text('Send Feedback'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'terms',
+                child: Row(
+                  children: [
+                    Icon(Icons.description, color: Color(0xFF417D7A)),
+                    SizedBox(width: 8),
+                    Text('Terms of Service'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(Icons.privacy_tip, color: Color(0xFF417D7A)),
+                    SizedBox(width: 8),
+                    Text('Privacy Policy'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(2),
           child: LinearProgressIndicator(

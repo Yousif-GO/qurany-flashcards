@@ -1609,6 +1609,13 @@ class _MainSurahViewState extends State<MainSurahView> {
 
                                                       if (ayah['isNextPage'] ==
                                                           true) {
+                                                        final isAyahForgotten =
+                                                            _forgottenAyahs[widget
+                                                                        .pageNumber]
+                                                                    ?.contains(
+                                                                        ayahIndex +
+                                                                            1) ??
+                                                                false;
                                                         return TextSpan(
                                                           children: [
                                                             TextSpan(
@@ -1640,8 +1647,11 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                       : ''),
                                                               style: TextStyle(
                                                                 color: isRevealed
-                                                                    ? Colors.grey[
-                                                                        600]
+                                                                    ? (isAyahForgotten
+                                                                        ? Colors
+                                                                            .orange
+                                                                        : Colors.grey[
+                                                                            600])
                                                                     : Colors
                                                                         .white,
                                                                 fontStyle:
