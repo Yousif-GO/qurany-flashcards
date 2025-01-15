@@ -1054,7 +1054,7 @@ class _MainSurahViewState extends State<MainSurahView> {
         });
       }
     } else if (reviewAyahs.isEmpty) {
-      _navigateToNextPage;
+      _navigateToNextPage();
     }
   }
 
@@ -1640,8 +1640,13 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                       : ''),
                                                               style: TextStyle(
                                                                 color: isRevealed
-                                                                    ? Colors.grey[
-                                                                        600]
+                                                                    ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex +
+                                                                                1) ??
+                                                                            false
+                                                                        ? Colors
+                                                                            .orange
+                                                                        : Colors.grey[
+                                                                            600]!)
                                                                     : Colors
                                                                         .white,
                                                                 fontStyle:

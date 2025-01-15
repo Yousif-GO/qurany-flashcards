@@ -79,6 +79,20 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SimpleList(
+                      selectedLanguage: widget.selectedLanguage,
+                      isGroupReading: false,
+                    ),
+                  ),
+                );
+              },
+            ),
             title: Text(_isCreating ? 'Create Khatma' : 'Join Khatma'),
             centerTitle: true,
             actions: [

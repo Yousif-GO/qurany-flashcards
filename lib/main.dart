@@ -765,83 +765,154 @@ class _SimpleListState extends State<SimpleList> {
               scrollDirection: Axis.horizontal,
               physics: BouncingScrollPhysics(),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Core Icons - Always visible
-                  IconButton(
-                    icon: Icon(Icons.language, color: Colors.white),
-                    tooltip: 'Change Language',
-                    onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
-                    ),
+                  // Settings Menu
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Comments Counter - Always visible if in group
+                      if (widget.groupName != null) _buildThoughtsButton(),
+                      // Optional text labels
+                      if (showText) ...[
+                        if (widget.groupName != null)
+                          Text(
+                            ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                      ],
+                      SizedBox(width: 8),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, color: Colors.white),
+                        onSelected: (String result) {
+                          switch (result) {
+                            case 'language':
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        LanguageSelectionPage()),
+                              );
+                              break;
+                            case 'tutorial':
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => TutorialPage(
+                                    selectedLanguage: widget.selectedLanguage,
+                                  ),
+                                ),
+                              );
+                              break;
+                            case 'feedback':
+                              showDialog(
+                                context: context,
+                                builder: (context) => FeedbackDialog(),
+                              );
+                              break;
+                            case 'terms':
+                              Navigator.pushNamed(context, '/terms');
+                              break;
+                            case 'privacy':
+                              Navigator.pushNamed(context, '/privacy');
+                              break;
+                            case 'private':
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) => SimpleList(
+                                    selectedLanguage: widget.selectedLanguage,
+                                    isGroupReading: false,
+                                  ),
+                                ),
+                              );
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: 'language',
+                            child: Row(
+                              children: [
+                                Icon(Icons.language, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Change Language'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'tutorial',
+                            child: Row(
+                              children: [
+                                Icon(Icons.help_outline, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Tutorial'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'feedback',
+                            child: Row(
+                              children: [
+                                Icon(Icons.feedback_outlined,
+                                    color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Send Feedback'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'terms',
+                            child: Row(
+                              children: [
+                                Icon(Icons.description, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Terms of Service'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'privacy',
+                            child: Row(
+                              children: [
+                                Icon(Icons.privacy_tip, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Privacy Policy'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'private',
+                            child: Row(
+                              children: [
+                                Icon(Icons.person, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text('Private Reading'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.help_outline, color: Colors.white),
-                    tooltip: 'Tutorial',
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => TutorialPage(
-                          selectedLanguage: widget.selectedLanguage,
+                  // Group Icon
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.group, color: Colors.white),
+                        tooltip: widget.groupName != null
+                            ? '${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}'
+                            : 'Group Reading',
+                        onPressed: () => Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => QuranRoomScreen(
+                              selectedLanguage: widget.selectedLanguage,
+                              isGroupReading: true,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.feedback_outlined, color: Colors.white),
-                    tooltip: 'Send Feedback',
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (context) => FeedbackDialog(),
-                    ),
-                  ),
-                  // Reading Mode Buttons
-                  IconButton(
-                    icon: Icon(Icons.description, color: Colors.white),
-                    tooltip: 'Terms of Service',
-                    onPressed: () => Navigator.pushNamed(context, '/terms'),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.privacy_tip, color: Colors.white),
-                    tooltip: 'Privacy Policy',
-                    onPressed: () => Navigator.pushNamed(context, '/privacy'),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.group, color: Colors.white),
-                    tooltip: widget.groupName != null
-                        ? '${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}'
-                        : 'Group Reading',
-                    onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => QuranRoomScreen(
-                          selectedLanguage: widget.selectedLanguage,
-                          isGroupReading: true,
-                        ),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.person, color: Colors.white),
-                    tooltip: 'Private Reading',
-                    onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => SimpleList(
-                          selectedLanguage: widget.selectedLanguage,
-                          isGroupReading: false,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Comments Counter - Always visible if in group
-                  if (widget.groupName != null) _buildThoughtsButton(),
-                  // Optional text labels
-                  if (showText) ...[
-                    if (widget.groupName != null)
-                      Text(
-                        ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                  ],
-                  SizedBox(width: 8),
                 ],
               ),
             );
