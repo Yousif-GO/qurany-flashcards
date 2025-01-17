@@ -70,7 +70,7 @@ A free, feature-rich Quran app designed for individual and group reading.
 - Group discussions
 
 ## Getting Started
-1. Visit https://qurany-flashcards.web.app
+1. Visit https://quranycards.com
 2. Choose reading mode:
    - Solo reading: Click 📚 icon
    - Group reading: Click "Read with Others"
