@@ -36,6 +36,7 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
   final _userNameController = TextEditingController();
   bool _isCreating = true;
   bool _isLoading = false;
+  Map<String, dynamic>? roomDetails;
 
   @override
   void initState() {
@@ -93,15 +94,25 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
                 );
               },
             ),
-            title: Text(_isCreating ? 'Create Khatma' : 'Join Khatma'),
+            title: Text(
+              _isCreating ? 'Create Khatma' : 'Join Khatma',
+              style: TextStyle(color: Color(0xFF417D7A)), // Deep green text
+            ),
             centerTitle: true,
+            backgroundColor: Colors.white, // White background
+            iconTheme:
+                IconThemeData(color: Color(0xFF417D7A)), // Deep green icons
             actions: [
               IconButton(
                 icon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.person, color: Colors.white, size: 20),
-                    Icon(Icons.menu_book, color: Colors.white, size: 20),
+                    Icon(Icons.person,
+                        color: Color(0xFF417D7A), // Deep green icon
+                        size: 20),
+                    Icon(Icons.menu_book,
+                        color: Color(0xFF417D7A), // Deep green icon
+                        size: 20),
                   ],
                 ),
                 tooltip: 'Private Reading',
@@ -285,20 +296,84 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
   }
 
   void _showShareDialog() {
+    // Calculate juz progress
+    final allPagesRead = roomDetails!['pages']
+        .entries
+        .where((page) => page.value['completed'] == true)
+        .map((page) => int.parse(page.key))
+        .toList();
+
+    final uncompletedJuz = <int>[];
+    final juzPages = {
+      1: [1, 21],
+      2: [22, 41],
+      3: [42, 61],
+      4: [62, 81],
+      5: [82, 101],
+      6: [102, 121],
+      7: [122, 141],
+      8: [142, 161],
+      9: [162, 181],
+      10: [182, 201],
+      11: [202, 221],
+      12: [222, 241],
+      13: [242, 261],
+      14: [262, 281],
+      15: [282, 301],
+      16: [302, 321],
+      17: [322, 341],
+      18: [342, 361],
+      19: [362, 381],
+      20: [382, 401],
+      21: [402, 421],
+      22: [422, 441],
+      23: [442, 461],
+      24: [462, 481],
+      25: [482, 501],
+      26: [502, 521],
+      27: [522, 541],
+      28: [542, 561],
+      29: [562, 581],
+      30: [582, 604],
+    };
+
+    for (int juz = 1; juz <= 30; juz++) {
+      final startPage = juzPages[juz]![0];
+      final endPage = juzPages[juz]![1];
+
+      final pagesInJuz = allPagesRead
+          .where((page) => page >= startPage && page <= endPage)
+          .toList();
+
+      if (pagesInJuz.length < (endPage - startPage + 1)) {
+        uncompletedJuz.add(juz);
+      }
+    }
+
+    final uncompletedJuzInfo = uncompletedJuz.isEmpty
+        ? 'All juz completed! 🎉'
+        : 'Juz to complete: ${uncompletedJuz.join(', ')}';
+
     // Encode both names into base64
     final encodedData = _encodeToBase64(
         '${_groupNameController.text}|${_khatmaNameController.text}');
+
+    final webLink = 'https://quranycards.com/join?code=$encodedData';
+    final appLink = 'quranycards://join?code=$encodedData';
 
     final roomInfo = '''🕌 Join our Quran Khatma!
 
 Group: ${_groupNameController.text}
 Khatma: ${_khatmaNameController.text}
 
+📖 Juz Progress:
+$uncompletedJuzInfo
+
 Join directly:
-https://qurany-flashcards.web.app/join?code=$encodedData
+${kIsWeb ? webLink : appLink}
 
 Or manually:
-1. Open https://qurany-flashcards.web.app
+1. Open https://quranycards.com
 2. Click the 📚 icon in the top right corner
 3. Click "Read with Others"
 4. Click "Join Instead"
@@ -401,7 +476,24 @@ Just read and make dua 🤲''';
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle:
+            TextStyle(color: Color(0xFF417D7A)), // Deep green label color
+        focusedBorder: OutlineInputBorder(
+          borderSide:
+              BorderSide(color: Color(0xFF417D7A)), // Deep green focused border
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey[400]!), // Light grey border
+        ),
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red), // Red error border
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red), // Red focused error border
+        ),
+      ),
       validator: (value) {
         if (value?.isEmpty ?? true) {
           return 'Please enter $label';
@@ -439,6 +531,10 @@ Just read and make dua 🤲''';
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: _handleSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF417D7A), // Deep green button color
+                foregroundColor: Colors.white, // White text color
+              ),
               child: Text(_isCreating ? 'Create Room' : 'Join Room'),
             ),
           ],
@@ -457,7 +553,40 @@ Just read and make dua 🤲''';
 
   // Add this method to parse URLs
   void _handlePastedUrl() async {
-    if (!kIsWeb) return;
+    if (!kIsWeb) {
+      // Handle deep link for Android
+      final uri = Uri.base;
+      print('Current URL: ${uri.toString()}');
+
+      if (uri.scheme == 'quranycards') {
+        final code = uri.queryParameters['code'];
+        print('Received code: $code');
+
+        if (code != null) {
+          try {
+            final decodedData = _decodeFromBase64(code);
+            final parts = decodedData.split('|');
+
+            if (parts.length == 2) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  _groupNameController.text = parts[0];
+                  _khatmaNameController.text = parts[1];
+                  _isCreating = false;
+                  _isLoading = false;
+                });
+              });
+            }
+          } catch (e) {
+            print('Error decoding data: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Invalid room code')),
+            );
+          }
+        }
+      }
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -528,7 +657,69 @@ Just read and make dua 🤲''';
     int remainingPages = 604 - completedPages;
     double completionPercentage = (completedPages / 604) * 100;
 
-    // Generate member rankings
+    // Helper function to get juz info for a member
+    String _getJuzInfo(List<int> pagesRead) {
+      final juzPages = {
+        1: [1, 21],
+        2: [22, 41],
+        3: [42, 61],
+        4: [62, 81],
+        5: [82, 101],
+        6: [102, 121],
+        7: [122, 141],
+        8: [142, 161],
+        9: [162, 181],
+        10: [182, 201],
+        11: [202, 221],
+        12: [222, 241],
+        13: [242, 261],
+        14: [262, 281],
+        15: [282, 301],
+        16: [302, 321],
+        17: [322, 341],
+        18: [342, 361],
+        19: [362, 381],
+        20: [382, 401],
+        21: [402, 421],
+        22: [422, 441],
+        23: [442, 461],
+        24: [462, 481],
+        25: [482, 501],
+        26: [502, 521],
+        27: [522, 541],
+        28: [542, 561],
+        29: [562, 581],
+        30: [582, 604],
+      };
+
+      final juzStatus = <int, String>{};
+
+      // Check each juz
+      for (final entry in juzPages.entries) {
+        final juz = entry.key;
+        final startPage = entry.value[0];
+        final endPage = entry.value[1];
+
+        // Get pages in this juz that were read
+        final pagesInJuz = pagesRead
+            .where((page) => page >= startPage && page <= endPage)
+            .toList();
+
+        if (pagesInJuz.isEmpty) {
+          continue; // Juz not started
+        }
+
+        if (pagesInJuz.length == (endPage - startPage + 1)) {
+          juzStatus[juz] = '✅ Juz $juz'; // Fully completed
+        } else {
+          juzStatus[juz] = '⏳ Juz $juz'; // Partially completed
+        }
+      }
+
+      return juzStatus.values.join(', ');
+    }
+
+    // Update the member rankings
     final memberRankings = sortedMembers.asMap().entries.map((entry) {
       int rank = entry.key + 1;
       String medal = rank == 1
@@ -538,8 +729,74 @@ Just read and make dua 🤲''';
               : rank == 3
                   ? '🥉'
                   : '•';
-      return '$medal ${entry.value.key}: ${entry.value.value} pages';
-    }).join('\n');
+
+      // Get pages read by this member
+      final pagesRead = pages.entries
+          .where((page) => page.value['completedBy'] == entry.value.key)
+          .map((page) => int.parse(page.key))
+          .toList();
+
+      final juzInfo = _getJuzInfo(pagesRead);
+
+      return '$medal ${entry.value.key}: ${entry.value.value} pages\n   $juzInfo';
+    }).join('\n\n');
+
+    // Add uncompleted juz info
+    final allPagesRead = pages.entries
+        .where((page) => page.value['completed'] == true)
+        .map((page) => int.parse(page.key))
+        .toList();
+
+    final uncompletedJuz = <int>[];
+    final juzPages = {
+      1: [1, 21],
+      2: [22, 41],
+      3: [42, 61],
+      4: [62, 81],
+      5: [82, 101],
+      6: [102, 121],
+      7: [122, 141],
+      8: [142, 161],
+      9: [162, 181],
+      10: [182, 201],
+      11: [202, 221],
+      12: [222, 241],
+      13: [242, 261],
+      14: [262, 281],
+      15: [282, 301],
+      16: [302, 321],
+      17: [322, 341],
+      18: [342, 361],
+      19: [362, 381],
+      20: [382, 401],
+      21: [402, 421],
+      22: [422, 441],
+      23: [442, 461],
+      24: [462, 481],
+      25: [482, 501],
+      26: [502, 521],
+      27: [522, 541],
+      28: [542, 561],
+      29: [562, 581],
+      30: [582, 604],
+    };
+
+    for (int juz = 1; juz <= 30; juz++) {
+      final startPage = juzPages[juz]![0];
+      final endPage = juzPages[juz]![1];
+
+      final pagesInJuz = allPagesRead
+          .where((page) => page >= startPage && page <= endPage)
+          .toList();
+
+      if (pagesInJuz.length < (endPage - startPage + 1)) {
+        uncompletedJuz.add(juz);
+      }
+    }
+
+    final uncompletedJuzInfo = uncompletedJuz.isEmpty
+        ? 'All juz completed! 🎉'
+        : 'Juz to complete: ${uncompletedJuz.join(', ')}';
 
     // Get random motivational quote
     final quotes = [
@@ -551,6 +808,7 @@ Just read and make dua 🤲''';
     ];
     final randomQuote = quotes[Random().nextInt(quotes.length)];
 
+    // Update the final message
     return '''🕌 Khatma Progress Update
 
 Group: ${roomDetails['groupName']}
@@ -564,10 +822,13 @@ Khatma: ${roomDetails['khatmaName']}
 👥 Member Rankings:
 $memberRankings
 
+📖 Juz Progress:
+$uncompletedJuzInfo
+
 💭 $randomQuote
 
 Join us in this blessed journey!
-https://qurany-flashcards.web.app/join?code=${Uri.encodeComponent(_encodeToBase64('${roomDetails['groupName']}|${roomDetails['khatmaName']}'))}
+https://quranycards.com/join?code=${Uri.encodeComponent(_encodeToBase64('${roomDetails['groupName']}|${roomDetails['khatmaName']}'))}
 
 ✨ Using Qurany Cards Pro
 • No ads

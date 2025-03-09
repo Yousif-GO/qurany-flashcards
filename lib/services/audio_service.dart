@@ -10,20 +10,28 @@ import 'package:archive/archive_io.dart';
 class AudioService {
   static const String BASE_URL = 'https://everyayah.com/data/Hudhaify_32kbps/';
 
-  static Future<String> getAudioPath(String surah, String ayah) async {
-    final fileName = '${surah.padLeft(3, '0')}${ayah.padLeft(3, '0')}.mp3';
-    final dir = await getApplicationDocumentsDirectory();
-    final filePath = '${dir.path}/audio_files_Hudhaify/$fileName';
+  static Future<String> getAudioPath(String surah, String ayah,
+      [String reciter = 'Hudhaify_32kbps']) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}/audio/$reciter';
 
-    // If file doesn't exist, try to download it
-    if (!await File(filePath).exists()) {
+    // Create directory if it doesn't exist
+    final dir = Directory(path);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    final audioFile = '$path/${surah}${ayah}.mp3';
+    final file = File(audioFile);
+
+    if (!await file.exists()) {
       try {
-        final response = await http.get(Uri.parse('$BASE_URL$fileName'));
+        // Download the file
+        final url = 'https://everyayah.com/data/$reciter/${surah}${ayah}.mp3';
+        final response = await http.get(Uri.parse(url));
+
         if (response.statusCode == 200) {
-          final file = File(filePath);
-          await file.create(recursive: true);
           await file.writeAsBytes(response.bodyBytes);
-          print('Downloaded audio file: $fileName');
         } else {
           print('Failed to download audio: ${response.statusCode}');
         }
@@ -32,7 +40,7 @@ class AudioService {
       }
     }
 
-    return filePath;
+    return audioFile;
   }
 
   static Future<bool> isAudioFileExists(String surah, String ayah) async {

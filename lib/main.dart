@@ -339,6 +339,17 @@ class _SimpleListState extends State<SimpleList> {
   final Map<int, Map<String, dynamic>> _surahInfo = SurahData.surahInfo;
   bool _showFirstWordOnly = false;
 
+  // Add search controller and state variables
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  List<int> _searchResults = [];
+
+  // Add scroll controller for navigation
+  final ScrollController _scrollController = ScrollController();
+
+  // Map to store surah item positions
+  final Map<int, double> _surahPositions = {};
+
   // Add translations map
   final Map<AppLanguage, Map<String, String>> translations = {
     AppLanguage.arabic: {
@@ -487,6 +498,19 @@ class _SimpleListState extends State<SimpleList> {
     },
   };
 
+  // Add search-related translations
+  void _initSearchTranslations() {
+    translations[AppLanguage.arabic]?['search_surah'] = 'البحث عن سورة';
+    translations[AppLanguage.english]?['search_surah'] = 'Search Surah';
+    translations[AppLanguage.spanish]?['search_surah'] = 'Buscar Sura';
+    translations[AppLanguage.hindi]?['search_surah'] = 'सूरह खोजें';
+    translations[AppLanguage.russian]?['search_surah'] = 'Поиск суры';
+    translations[AppLanguage.chinese]?['search_surah'] = '搜索章节';
+    translations[AppLanguage.turkish]?['search_surah'] = 'Sure Ara';
+    translations[AppLanguage.urdu]?['search_surah'] = 'سورہ تلاش کریں';
+    translations[AppLanguage.indonesian]?['search_surah'] = 'Cari Surah';
+  }
+
   // Add helper method to get translations
   String getTranslation(String key) {
     return translations[widget.selectedLanguage]?[key] ??
@@ -521,6 +545,13 @@ class _SimpleListState extends State<SimpleList> {
   @override
   void initState() {
     super.initState();
+    _initSearchTranslations();
+
+    // Add post-frame callback to calculate surah positions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateSurahPositions();
+    });
+
     if (widget.isGroupReading) {
       _loadRoomDetails().then((_) {
         if (!_hasShownInitialInfo) {
@@ -531,6 +562,72 @@ class _SimpleListState extends State<SimpleList> {
         }
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // Method to calculate surah positions in the list
+  void _calculateSurahPositions() {
+    // This will be called after the list is built
+    for (int i = 1; i <= 114; i++) {
+      final context = _getSurahContext(i);
+      if (context != null) {
+        final RenderBox box = context.findRenderObject() as RenderBox;
+        final position = box.localToGlobal(Offset.zero).dy;
+        _surahPositions[i] = position;
+      }
+    }
+  }
+
+  // Helper method to get the build context for a surah
+  BuildContext? _getSurahContext(int surahNum) {
+    try {
+      return _surahKeys[surahNum]?.currentContext;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Map to store keys for each surah
+  final Map<int, GlobalKey> _surahKeys = {
+    for (int i = 1; i <= 114; i++) i: GlobalKey(),
+  };
+
+  // Add search method
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    final results = <int>[];
+    final lowercaseQuery = query.toLowerCase();
+
+    // Search by surah name (Arabic and English)
+    for (int i = 1; i <= 114; i++) {
+      final surahName = _surahInfo[i]!['name']!.toLowerCase();
+      final surahNameEn = _surahInfo[i]!['name_en']!.toLowerCase();
+      final surahNumber = i.toString();
+
+      if (surahName.contains(lowercaseQuery) ||
+          surahNameEn.contains(lowercaseQuery) ||
+          surahNumber == query) {
+        results.add(i);
+      }
+    }
+
+    setState(() {
+      _searchResults = results;
+      _isSearching = true;
+    });
   }
 
   Future<void> _loadRoomDetails() async {
@@ -546,6 +643,64 @@ class _SimpleListState extends State<SimpleList> {
   // Add the new dialog methods
   void _showRoomInfoDialog() {
     if (widget.groupName == null || widget.khatmaName == null) return;
+
+    // Calculate juz progress
+    final allPagesRead = roomDetails!['pages']
+        .entries
+        .where((page) => page.value['completed'] == true)
+        .map((page) => int.parse(page.key))
+        .toList();
+
+    final uncompletedJuz = <int>[];
+    final juzPages = {
+      1: [1, 21],
+      2: [22, 41],
+      3: [42, 61],
+      4: [62, 81],
+      5: [82, 101],
+      6: [102, 121],
+      7: [122, 141],
+      8: [142, 161],
+      9: [162, 181],
+      10: [182, 201],
+      11: [202, 221],
+      12: [222, 241],
+      13: [242, 261],
+      14: [262, 281],
+      15: [282, 301],
+      16: [302, 321],
+      17: [322, 341],
+      18: [342, 361],
+      19: [362, 381],
+      20: [382, 401],
+      21: [402, 421],
+      22: [422, 441],
+      23: [442, 461],
+      24: [462, 481],
+      25: [482, 501],
+      26: [502, 521],
+      27: [522, 541],
+      28: [542, 561],
+      29: [562, 581],
+      30: [582, 604],
+    };
+
+    for (int juz = 1; juz <= 30; juz++) {
+      final startPage = juzPages[juz]![0];
+      final endPage = juzPages[juz]![1];
+
+      final pagesInJuz = allPagesRead
+          .where((page) => page >= startPage && page <= endPage)
+          .toList();
+
+      if (pagesInJuz.length < (endPage - startPage + 1)) {
+        uncompletedJuz.add(juz);
+      }
+    }
+
+    final uncompletedJuzInfo = uncompletedJuz.isEmpty
+        ? 'All juz completed! 🎉'
+        : ' ${uncompletedJuz.join(', ')}';
 
     final roomStatus = KhatmaUtils.generateKhatmaStatus({
       ...?roomDetails,
@@ -576,6 +731,10 @@ class _SimpleListState extends State<SimpleList> {
                 ),
               ),
               Divider(),
+              Text('Unread Juz:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(uncompletedJuzInfo),
+              Divider(),
               SelectableText(roomStatus),
             ],
           ),
@@ -585,7 +744,8 @@ class _SimpleListState extends State<SimpleList> {
             icon: Icon(Icons.copy),
             label: Text('Copy Status'),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: roomStatus));
+              Clipboard.setData(ClipboardData(
+                  text: '$roomStatus\n\n Unread Juz :\n$uncompletedJuzInfo'));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Status copied to clipboard!')),
               );
@@ -604,7 +764,7 @@ class _SimpleListState extends State<SimpleList> {
     final pages = roomDetails?['pages'] as Map? ?? {};
     final completedPages = pages.entries
         .where((e) => e.value['completed'] == true)
-        .take(5) // Show last 5 completed pages
+        .take(20) // Show last 5 completed pages
         .map((e) => ListTile(
               leading: Icon(Icons.check_circle, color: Colors.green),
               title: Text('Page ${e.key}'),
@@ -638,22 +798,18 @@ class _SimpleListState extends State<SimpleList> {
   Widget _buildRoomInfo() {
     if (!widget.isGroupReading || roomDetails == null) return SizedBox();
 
-    return Card(
-      margin: EdgeInsets.all(8),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Group: ${widget.groupName}'),
-            Text('Khatma: ${widget.khatmaName}'),
-            Text('Created by: ${roomDetails!['createdBy']}'),
-            Text(
-                'Created at: ${roomDetails!['createdAt']?.toDate().toString() ?? 'N/A'}'),
-            Text(
-                'Members: ${(roomDetails!['members'] as List?)?.join(", ") ?? "None"}'),
-          ],
-        ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.info_outline, color: Colors.white, size: 20),
+          SizedBox(width: 4),
+          Text(
+            '${roomDetails!['members']?.length ?? 0} members',
+            style: TextStyle(color: Colors.white),
+          ),
+        ],
       ),
     );
   }
@@ -765,355 +921,535 @@ class _SimpleListState extends State<SimpleList> {
               scrollDirection: Axis.horizontal,
               physics: BouncingScrollPhysics(),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // Settings Menu
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Comments Counter - Always visible if in group
-                      if (widget.groupName != null) _buildThoughtsButton(),
-                      // Optional text labels
-                      if (showText) ...[
-                        if (widget.groupName != null)
-                          Text(
-                            ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                      ],
-                      SizedBox(width: 8),
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert, color: Colors.white),
-                        onSelected: (String result) {
-                          switch (result) {
-                            case 'language':
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        LanguageSelectionPage()),
-                              );
-                              break;
-                            case 'tutorial':
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => TutorialPage(
-                                    selectedLanguage: widget.selectedLanguage,
-                                  ),
-                                ),
-                              );
-                              break;
-                            case 'feedback':
-                              showDialog(
-                                context: context,
-                                builder: (context) => FeedbackDialog(),
-                              );
-                              break;
-                            case 'terms':
-                              Navigator.pushNamed(context, '/terms');
-                              break;
-                            case 'privacy':
-                              Navigator.pushNamed(context, '/privacy');
-                              break;
-                            case 'private':
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) => SimpleList(
-                                    selectedLanguage: widget.selectedLanguage,
-                                    isGroupReading: false,
-                                  ),
-                                ),
-                              );
-                              break;
-                          }
-                        },
-                        itemBuilder: (BuildContext context) =>
-                            <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'language',
-                            child: Row(
-                              children: [
-                                Icon(Icons.language, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Change Language'),
-                              ],
+                  // Settings Menu (Three Dots)
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.white),
+                    onSelected: (String result) {
+                      switch (result) {
+                        case 'language':
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                                builder: (context) => LanguageSelectionPage()),
+                          );
+                          break;
+                        case 'tutorial':
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => TutorialPage(
+                                selectedLanguage: widget.selectedLanguage,
+                              ),
                             ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'tutorial',
-                            child: Row(
-                              children: [
-                                Icon(Icons.help_outline, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Tutorial'),
-                              ],
+                          );
+                          break;
+                        case 'feedback':
+                          showDialog(
+                            context: context,
+                            builder: (context) => FeedbackDialog(),
+                          );
+                          break;
+                        case 'terms':
+                          Navigator.pushNamed(context, '/terms');
+                          break;
+                        case 'privacy':
+                          Navigator.pushNamed(context, '/privacy');
+                          break;
+                        case 'private':
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => SimpleList(
+                                selectedLanguage: widget.selectedLanguage,
+                                isGroupReading: false,
+                              ),
                             ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'feedback',
-                            child: Row(
-                              children: [
-                                Icon(Icons.feedback_outlined,
-                                    color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Send Feedback'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'terms',
-                            child: Row(
-                              children: [
-                                Icon(Icons.description, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Terms of Service'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'privacy',
-                            child: Row(
-                              children: [
-                                Icon(Icons.privacy_tip, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Privacy Policy'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'private',
-                            child: Row(
-                              children: [
-                                Icon(Icons.person, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Private Reading'),
-                              ],
-                            ),
-                          ),
-                        ],
+                          );
+                          break;
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'language',
+                        child: Row(
+                          children: [
+                            Icon(Icons.language, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Change Language'),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                  // Group Icon
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.group, color: Colors.white),
-                        tooltip: widget.groupName != null
-                            ? '${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}'
-                            : 'Group Reading',
-                        onPressed: () => Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => QuranRoomScreen(
-                              selectedLanguage: widget.selectedLanguage,
-                              isGroupReading: true,
-                            ),
-                          ),
+                      const PopupMenuItem<String>(
+                        value: 'tutorial',
+                        child: Row(
+                          children: [
+                            Icon(Icons.help_outline, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Tutorial'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'feedback',
+                        child: Row(
+                          children: [
+                            Icon(Icons.feedback_outlined, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Send Feedback'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'terms',
+                        child: Row(
+                          children: [
+                            Icon(Icons.description, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Terms of Service'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'privacy',
+                        child: Row(
+                          children: [
+                            Icon(Icons.privacy_tip, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Privacy Policy'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'private',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text('Private Reading'),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                  // Room Info and Thoughts Button
+                  if (widget.groupName != null) ...[
+                    _buildRoomInfo(),
+                    _buildThoughtsButton(),
+                  ],
+                  // Group Icon
+                  IconButton(
+                    icon: Icon(Icons.group, color: Colors.white),
+                    tooltip: widget.groupName != null
+                        ? '${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}'
+                        : 'Group Reading',
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => QuranRoomScreen(
+                          selectedLanguage: widget.selectedLanguage,
+                          isGroupReading: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Optional text labels
+                  if (showText) ...[
+                    if (widget.groupName != null)
+                      Text(
+                        ' ${widget.groupName?.split(' ')[0]} - ${widget.khatmaName?.split(' ')[0]}',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                  ],
                 ],
               ),
             );
           },
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(2),
-          child: LinearProgressIndicator(
-            backgroundColor: Colors.white24,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            value: 0,
+          preferredSize: Size.fromHeight(50),
+          child: Column(
+            children: [
+              // Search bar
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: getTranslation('search_surah'),
+                    hintStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: Colors.white70),
+                            onPressed: () {
+                              _searchController.clear();
+                              _performSearch('');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white24,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: _performSearch,
+                ),
+              ),
+              LinearProgressIndicator(
+                backgroundColor: Colors.white24,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                value: 0,
+              ),
+            ],
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: 114,
-        itemBuilder: (context, index) {
-          final surahNum = index + 1;
-          final surahData = _surahInfo[surahNum]!;
-          final pages = surahPages[surahNum]!;
+      body: _isSearching
+          ? (_searchResults.isNotEmpty
+              ? _buildSearchResults(surahPages, specialPages)
+              : _buildNoResultsFound())
+          : ListView.builder(
+              controller: _scrollController,
+              itemCount: 114,
+              itemBuilder: (context, index) {
+                final surahNum = index + 1;
+                final surahData = _surahInfo[surahNum]!;
+                final pages = surahPages[surahNum]!;
 
-          // Add special pages to the surah's page list if it's part of a multi-surah page
-          List<int> additionalPages = [];
-          specialPages.forEach((pageNum, surahs) {
-            if (surahs.contains(surahNum) && !pages.contains(pageNum)) {
-              additionalPages.add(pageNum);
-            }
-          });
-          final allPages = [...pages, ...additionalPages]..sort();
+                // Add special pages to the surah's page list if it's part of a multi-surah page
+                List<int> additionalPages = [];
+                specialPages.forEach((pageNum, surahs) {
+                  if (surahs.contains(surahNum) && !pages.contains(pageNum)) {
+                    additionalPages.add(pageNum);
+                  }
+                });
+                final allPages = [...pages, ...additionalPages]..sort();
 
-          return Directionality(
-            textDirection: TextDirection.rtl,
-            child: ExpansionTile(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _surahInfo[surahNum]!['name']!,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Scheherazade',
-                        ),
-                      ),
-                      // Use cached check for due items
-                      if (_hasDueItems(allPages))
-                        Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(Icons.flag,
-                              size: 16, color: Color(0xFF417D7A)),
-                        ),
-                    ],
-                  ),
-                  Text(
-                    _surahInfo[surahNum]!['name_en']!,
-                    style: TextStyle(
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              children: allPages.map((pageNum) {
-                final multipleSurahs = specialPages[pageNum] ?? [];
-
-                return ListTile(
-                  title: Row(
-                    children: [
-                      Text('صفحة $pageNum'),
-                      SizedBox(width: 8),
-                      if (widget.isGroupReading &&
-                          roomDetails != null &&
-                          (roomDetails?['pages'] as Map?)?[pageNum.toString()]
-                                  ?['completed'] ==
-                              true)
-                        Expanded(
-                          child: Text(
-                            '✓ Completed by: ${(roomDetails?['pages'] as Map?)?[pageNum.toString()]?['completedBy'] ?? 'Unknown'}',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      // Use cached due item counts
-                      if (_srsScheduler.getDueItemCounts()[pageNum] != null)
-                        Badge(
-                          label: Text(
-                              '${_srsScheduler.getDueItemCounts()[pageNum]}'),
-                        ),
-                      if (_srsScheduler.hasScheduledReviews(pageNum)) ...[
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Level: ${_srsScheduler.getLevel(pageNum, _srsScheduler.getFirstScheduledAyah(pageNum))}, next: ${_srsScheduler.getNextReviewDateTime(pageNum)}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.left,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                      if (multipleSurahs.isNotEmpty) ...[
-                        SizedBox(width: 8),
-                        Text(
-                          '(${multipleSurahs.map((s) => _surahInfo[s]!['name']).join(' - ')})',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                            fontFamily: '_Othmani',
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  onTap: () async {
-                    // Show dialog to choose view type
-                    final viewType = await showDialog<String>(
-                      context: context,
-                      builder: (BuildContext context) => AlertDialog(
-                        title: Text('Select View Type'),
-                        content: Column(
+                return Directionality(
+                  key: _surahKeys[surahNum],
+                  textDirection: TextDirection.rtl,
+                  child: ExpansionTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            ListTile(
-                              leading: Icon(Icons.text_fields),
-                              title: Text('Text View'),
-                              onTap: () => Navigator.pop(context, 'text'),
+                            Text(
+                              _surahInfo[surahNum]!['name']!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'Scheherazade',
+                              ),
                             ),
-                            ListTile(
-                              leading: Icon(Icons.image),
-                              title: Text('Image (تجويد) View'),
-                              onTap: () => Navigator.pop(context, 'image'),
+                            // Use cached check for due items
+                            if (_hasDueItems(allPages))
+                              Padding(
+                                padding: EdgeInsets.only(left: 8),
+                                child: Icon(Icons.flag,
+                                    size: 16, color: Color(0xFF417D7A)),
+                              ),
+                          ],
+                        ),
+                        Text(
+                          _surahInfo[surahNum]!['name_en']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    children: allPages.map((pageNum) {
+                      final multipleSurahs = specialPages[pageNum] ?? [];
+
+                      return ListTile(
+                        title: Row(
+                          children: [
+                            Text('$pageNum'),
+                            SizedBox(width: 8),
+                            if (widget.isGroupReading &&
+                                roomDetails != null &&
+                                (roomDetails?['pages']
+                                            as Map?)?[pageNum.toString()]
+                                        ?['completed'] ==
+                                    true)
+                              Expanded(
+                                child: Text(
+                                  '✓  ${(roomDetails?['pages'] as Map?)?[pageNum.toString()]?['completedBy'] ?? 'Unknown'}',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            // Use cached due item counts
+                            if (_srsScheduler.getDueItemCounts()[pageNum] !=
+                                null)
+                              Badge(
+                                label: Text(
+                                    '${_srsScheduler.getDueItemCounts()[pageNum]}'),
+                              ),
+                            if (_srsScheduler.hasScheduledReviews(pageNum)) ...[
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Level: ${_srsScheduler.getLevel(pageNum, _srsScheduler.getFirstScheduledAyah(pageNum))}, next: ${_srsScheduler.getNextReviewDateTime(pageNum)}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                            if (multipleSurahs.isNotEmpty) ...[
+                              SizedBox(width: 8),
+                              Text(
+                                '(${multipleSurahs.map((s) => _surahInfo[s]!['name']).join(' - ')})',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                  fontFamily: '_Othmani',
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        onTap: () async {
+                          // Show dialog to choose view type
+                          final viewType = await showDialog<String>(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              title: Text('Select View Type'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: Icon(Icons.text_fields),
+                                    title: Text('memorize (حفظ) '),
+                                    onTap: () => Navigator.pop(context, 'text'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.image),
+                                    title: Text('Read (تجويد) '),
+                                    onTap: () =>
+                                        Navigator.pop(context, 'image'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+
+                          if (viewType != null) {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => viewType == 'text'
+                                    ? SurahPage(
+                                        pageNumber: pageNum,
+                                        currentAyah: 1,
+                                        onAyahChanged: (newAyah) {
+                                          setState(() {
+                                            _currentAyahNumbers[pageNum] = 1;
+                                          });
+                                        },
+                                        initialSurah:
+                                            multipleSurahs.contains(surahNum)
+                                                ? surahNum
+                                                : null,
+                                        autoPlayEnabled: _globalAutoPlayEnabled,
+                                        onAutoPlayChanged: (enabled) {
+                                          setState(() {
+                                            _globalAutoPlayEnabled = enabled;
+                                          });
+                                        },
+                                        showFirstWordOnly: _showFirstWordOnly,
+                                        onShowFirstWordOnlyChanged: (value) {
+                                          setState(() {
+                                            _showFirstWordOnly = value;
+                                          });
+                                        },
+                                        selectedLanguage:
+                                            widget.selectedLanguage,
+                                        groupName: widget.groupName,
+                                        khatmaName: widget.khatmaName,
+                                        userName: widget.userName,
+                                        isGroupReading: widget.isGroupReading,
+                                      )
+                                    : QuranImagePage(
+                                        pageNumber: pageNum,
+                                        groupName: widget.groupName,
+                                        khatmaName: widget.khatmaName,
+                                        userName: widget.userName,
+                                        isGroupReading: widget.isGroupReading,
+                                      ),
+                              ),
+                            );
+                            // Refresh room details when returning from the page
+                            if (widget.isGroupReading) {
+                              await _loadRoomDetails();
+                            }
+                            // Trigger rebuild
+                            setState(() {});
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  // Add a widget to show when no search results are found
+  Widget _buildNoResultsFound() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No surahs found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Try a different search term',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 24),
+          TextButton.icon(
+            icon: Icon(Icons.clear),
+            label: Text('Clear Search'),
+            onPressed: () {
+              setState(() {
+                _searchController.clear();
+                _isSearching = false;
+                _searchResults = [];
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build search results widget
+  Widget _buildSearchResults(
+      Map<int, List<int>> surahPages, Map<int, List<int>> specialPages) {
+    return ListView.builder(
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final surahNum = _searchResults[index];
+        final surahData = _surahInfo[surahNum]!;
+        final pages = surahPages[surahNum]!;
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Card(
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            elevation: 2,
+            child: InkWell(
+              onTap: () {
+                // Navigate to the surah in the main list
+                setState(() {
+                  _searchController.clear();
+                  _isSearching = false;
+                });
+
+                // Use a post-frame callback to ensure the list is built
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  // Find the position of the surah in the list
+                  final position =
+                      (surahNum - 1) * 50.0; // Approximate position
+
+                  // Scroll to the position
+                  _scrollController.animateTo(
+                    position,
+                    duration: Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF417D7A),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$surahNum',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _surahInfo[surahNum]!['name']!,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontFamily: 'Scheherazade',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Pages: ${pages.first}-${pages.last}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                    Text(
+                      _surahInfo[surahNum]!['name_en']!,
+                      style: TextStyle(
+                        fontSize: 14,
                       ),
-                    );
-
-                    if (viewType != null) {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => viewType == 'text'
-                              ? SurahPage(
-                                  pageNumber: pageNum,
-                                  currentAyah: 1,
-                                  onAyahChanged: (newAyah) {
-                                    setState(() {
-                                      _currentAyahNumbers[pageNum] = 1;
-                                    });
-                                  },
-                                  initialSurah:
-                                      multipleSurahs.contains(surahNum)
-                                          ? surahNum
-                                          : null,
-                                  autoPlayEnabled: _globalAutoPlayEnabled,
-                                  onAutoPlayChanged: (enabled) {
-                                    setState(() {
-                                      _globalAutoPlayEnabled = enabled;
-                                    });
-                                  },
-                                  showFirstWordOnly: _showFirstWordOnly,
-                                  onShowFirstWordOnlyChanged: (value) {
-                                    setState(() {
-                                      _showFirstWordOnly = value;
-                                    });
-                                  },
-                                  selectedLanguage: widget.selectedLanguage,
-                                  groupName: widget.groupName,
-                                  khatmaName: widget.khatmaName,
-                                  userName: widget.userName,
-                                  isGroupReading: widget.isGroupReading,
-                                )
-                              : QuranImagePage(
-                                  pageNumber: pageNum,
-                                  groupName: widget.groupName,
-                                  khatmaName: widget.khatmaName,
-                                  userName: widget.userName,
-                                  isGroupReading: widget.isGroupReading,
-                                ),
-                        ),
-                      );
-                      // Refresh room details when returning from the page
-                      if (widget.isGroupReading) {
-                        await _loadRoomDetails();
-                      }
-                      // Trigger rebuild
-                      setState(() {});
-                    }
-                  },
-                );
-              }).toList(),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

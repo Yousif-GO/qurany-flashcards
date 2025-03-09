@@ -3,6 +3,7 @@ import '../services/firebase_service.dart';
 import '../services/comments_service.dart';
 import '../models/comment.dart';
 import '../widgets/comments_dialog.dart';
+import 'dart:math' as math;
 
 class QuranImagePage extends StatefulWidget {
   final int pageNumber;
@@ -26,6 +27,11 @@ class QuranImagePage extends StatefulWidget {
 
 class _QuranImagePageState extends State<QuranImagePage> {
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   Future<void> _navigateToNextPage() async {
     int nextPage = widget.pageNumber == 604 ? 1 : widget.pageNumber + 1;
@@ -101,6 +107,8 @@ class _QuranImagePageState extends State<QuranImagePage> {
   Widget build(BuildContext context) {
     final formattedPage = widget.pageNumber.toString().padLeft(3, '0');
     final assetPath = 'assets/Quran_images/$formattedPage.jpg';
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       appBar: AppBar(
@@ -153,23 +161,100 @@ class _QuranImagePageState extends State<QuranImagePage> {
             ),
         ],
       ),
-      body: GestureDetector(
-        onTap: _navigateToNextPage,
-        child: Center(
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: Image.asset(
-              assetPath,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                print('Error loading image: $error');
-                print('Asset path attempted: $assetPath');
-                return Text('Failed to load page ${widget.pageNumber}');
-              },
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: _navigateToNextPage,
+            child: Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Container(
+                      width: screenWidth,
+                      constraints: BoxConstraints(
+                        minHeight: screenHeight - kToolbarHeight - 24,
+                      ),
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                        assetPath,
+                        width: screenWidth,
+                        fit: BoxFit.fitWidth,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading image: $error');
+                          print('Asset path attempted: $assetPath');
+                          return Text(
+                              'Failed to load page ${widget.pageNumber}');
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
+          Positioned(
+            left: 16,
+            bottom: 24,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _navigateToNextPage,
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.2),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 24,
+            child: widget.pageNumber > 1
+                ? Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QuranImagePage(
+                              pageNumber: widget.pageNumber - 1,
+                              groupName: widget.groupName,
+                              khatmaName: widget.khatmaName,
+                              userName: widget.userName,
+                              isGroupReading: widget.isGroupReading,
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(30),
+                      child: Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(0.2),
+                        ),
+                        child: Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  )
+                : SizedBox(),
+          ),
+        ],
       ),
     );
   }

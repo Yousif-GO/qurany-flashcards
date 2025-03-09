@@ -87,6 +87,51 @@ class _MainSurahViewState extends State<MainSurahView> {
   Set<int> _fullyRevealedAyahs = {};
   String? _surahBismillah;
 
+  // Add new state variables for Quran text selection and font size
+  String _selectedQuranText = 'quran-uthmani (1).txt';
+  double _quranFontSize = 24.0; // Default font size
+
+  // Add reciter selection
+  String _selectedReciter = 'Hudhaify_32kbps';
+
+  // List of available Quran text files
+  final List<Map<String, String>> _quranTextOptions = [
+    {
+      'value': 'quran-uthmani (1).txt',
+      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)'
+    },
+    {
+      'value': 'quran-uthmani-min.txt',
+      'label':
+          'Uthmani Minimal (text with a minimal number of diacritics and symbols. (الحَمدُ لِلَّهِ رَبِّ العـٰلَمينَ)'
+    }
+  ];
+
+  // List of available reciters (with smaller file sizes preferred)
+  final List<Map<String, String>> _reciterOptions = [
+    {'value': 'Hudhaify_32kbps', 'label': 'Hudhaify (32kbps)'},
+    {'value': 'Abdullah_Basfar_32kbps', 'label': 'Abdullah Basfar (32kbps)'},
+    {'value': 'Ibrahim_Akhdar_32kbps', 'label': 'Ibrahim Akhdar (32kbps)'},
+    {'value': 'Menshawi_16kbps', 'label': 'Menshawi (16kbps)'},
+    {'value': 'Muhammad_Ayyoub_32kbps', 'label': 'Muhammad Ayyoub (32kbps)'},
+    {
+      'value': 'Abdul_Basit_Murattal_64kbps',
+      'label': 'Abdul Basit Murattal (64kbps)'
+    },
+    {
+      'value': 'Abdurrahmaan_As-Sudais_64kbps',
+      'label': 'Abdurrahmaan As-Sudais (64kbps)'
+    },
+    {
+      'value': 'Abu_Bakr_Ash-Shaatree_64kbps',
+      'label': 'Abu Bakr Ash-Shaatree (64kbps)'
+    },
+    {'value': 'Alafasy_64kbps', 'label': 'Mishary Alafasy (64kbps)'},
+    {'value': 'Ghamadi_40kbps', 'label': 'Ghamadi (40kbps)'},
+    {'value': 'Maher_AlMuaiqly_64kbps', 'label': 'Maher Al Muaiqly (64kbps)'},
+    {'value': 'Husary_64kbps', 'label': 'Husary (64kbps)'},
+  ];
+
   final Map<int, Map<String, dynamic>> _surahInfo = SurahData.surahInfo;
 
   static Map<int, Set<int>> _forgottenAyahs =
@@ -406,6 +451,9 @@ class _MainSurahViewState extends State<MainSurahView> {
     // Initialize _currentReviewAyah based on forgotten ayahs
     _currentReviewAyah = _getForgottenAyahCount();
 
+    // Load saved preferences for Quran text and font size
+    _loadTextPreferences();
+
     _loadData().then((_) {
       setState(() {
         // Check for review ayahs
@@ -533,6 +581,24 @@ class _MainSurahViewState extends State<MainSurahView> {
     super.dispose();
   }
 
+  Future<void> _loadTextPreferences() async {
+    final prefs = await shared_prefs.SharedPreferences.getInstance();
+    setState(() {
+      _selectedQuranText =
+          prefs.getString('selectedQuranText') ?? 'quran-uthmani (1).txt';
+      _quranFontSize = prefs.getDouble('quranFontSize') ?? 24.0;
+      _selectedReciter =
+          prefs.getString('selectedReciter') ?? 'Hudhaify_32kbps';
+    });
+  }
+
+  Future<void> _saveTextPreferences() async {
+    final prefs = await shared_prefs.SharedPreferences.getInstance();
+    await prefs.setString('selectedQuranText', _selectedQuranText);
+    await prefs.setDouble('quranFontSize', _quranFontSize);
+    await prefs.setString('selectedReciter', _selectedReciter);
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -543,7 +609,7 @@ class _MainSurahViewState extends State<MainSurahView> {
       final mappingText =
           await rootBundle.loadString('assets/Txt files/page_mapping.txt');
       final quranText =
-          await rootBundle.loadString('assets/Txt files/quran-uthmani (1).txt');
+          await rootBundle.loadString('assets/Txt files/${_selectedQuranText}');
 
       // Get the appropriate tafsir file based on language
       String tafsirFile;
@@ -720,11 +786,12 @@ class _MainSurahViewState extends State<MainSurahView> {
       if (kIsWeb) {
         // For web, stream directly from URL
         final url =
-            'https://everyayah.com/data/Hudhaify_32kbps/${surahStr}${ayahStr}.mp3';
+            'https://everyayah.com/data/${_selectedReciter}/${surahStr}${ayahStr}.mp3';
         await _audioPlayer.play(UrlSource(url));
       } else {
         // For mobile, use local file with download prompt
-        final audioFile = await AudioService.getAudioPath(surahStr, ayahStr);
+        final audioFile = await AudioService.getAudioPath(
+            surahStr, ayahStr, _selectedReciter);
         final prefs = await shared_prefs.SharedPreferences.getInstance();
         final hideDownloadPrompt =
             prefs.getBool('hideAudioDownloadPrompt') ?? false;
@@ -1177,10 +1244,8 @@ class _MainSurahViewState extends State<MainSurahView> {
 
     // Calculate responsive font sizes based on screen dimensions
     double getQuranFontSize() {
-      final screenWidth = MediaQuery.of(context).size.width;
-      if (screenWidth <= 600) return screenWidth * 0.06;
-      if (screenWidth <= 1024) return screenWidth * 0.04;
-      return 24.0; // Default size for larger screens
+      // Use the user-selected font size instead of calculating based on screen width
+      return _quranFontSize;
     }
 
     double getSymbolFontSize() {
@@ -1236,6 +1301,14 @@ class _MainSurahViewState extends State<MainSurahView> {
               ),
               centerTitle: true,
               actions: [
+                // Add settings icon for text options
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    _showTextSettingsDialog(context);
+                  },
+                  tooltip: 'Text Settings',
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(
@@ -2083,6 +2156,107 @@ class _MainSurahViewState extends State<MainSurahView> {
           ),
         if (widget.isGroupReading) _buildRoomInfo(),
       ],
+    );
+  }
+
+  // Add a method to show the text settings dialog
+  void _showTextSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Text & Audio Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Quran Text:'),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedQuranText,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedQuranText = newValue;
+                          });
+                        }
+                      },
+                      items: _quranTextOptions.map<DropdownMenuItem<String>>(
+                          (Map<String, String> option) {
+                        return DropdownMenuItem<String>(
+                          value: option['value'],
+                          child: Text(option['label']!),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20),
+                    Text('Font Size: ${_quranFontSize.toStringAsFixed(1)}'),
+                    Slider(
+                      value: _quranFontSize,
+                      min: 16.0,
+                      max: 40.0,
+                      divisions: 12,
+                      label: _quranFontSize.toStringAsFixed(1),
+                      onChanged: (double value) {
+                        setState(() {
+                          _quranFontSize = value;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    Text('Reciter:'),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedReciter,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedReciter = newValue;
+                          });
+                        }
+                      },
+                      items: _reciterOptions.map<DropdownMenuItem<String>>(
+                          (Map<String, String> option) {
+                        return DropdownMenuItem<String>(
+                          value: option['value'],
+                          child: Text(option['label']!),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Apply'),
+                  onPressed: () {
+                    // Update the main state and reload data if text file changed
+                    this.setState(() {
+                      _quranFontSize = _quranFontSize;
+                      if (_selectedQuranText != this._selectedQuranText) {
+                        this._selectedQuranText = _selectedQuranText;
+                        _loadData(); // Reload data with new text file
+                      }
+                      this._selectedReciter = _selectedReciter;
+                    });
+                    _saveTextPreferences(); // Save preferences
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

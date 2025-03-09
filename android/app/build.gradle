@@ -30,11 +30,11 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.qurany.flashcards"
+        applicationId "com.yourname.quranycardspro"
         minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
-        versionCode flutter.versionCode
-        versionName flutter.versionName
+        versionCode 5
+        versionName "1.0.1"
         multiDexEnabled true
     }
 
