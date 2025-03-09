@@ -86,9 +86,11 @@ A free, feature-rich Quran app designed for individual and group reading.
 
 ## Features in Development
 
-- [ ] Offline mode
+- [ ] voice recognition for next ayah reveal 
+- [ ] page zoom for elders 
+- [x] Offline mode
 - [ ] Advanced progress analytics
-- [ ] Social sharing features
+- [x] Social sharing features
 - [ ] Custom reading plans
 - [ ] Advanced search functionality
 
@@ -116,7 +118,7 @@ This project is licensed under a Non-Commercial, Non-Profit Use License - see th
 
 ## Acknowledgments
 
-- Quran text source: [https://globalquran.com/download/]
+- Quran text source: [https://globalquran.com/download/] , [https://tanzil.net/download/]
 - Audio recitations: [https://everyayah.com/]
 - Quran images [https://easyquran.com/en/hafs-download-page/?uri=1]
 - fonts [https://fonts.qurancomplex.gov.sa/]
