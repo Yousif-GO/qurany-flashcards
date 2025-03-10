@@ -109,27 +109,120 @@ class _MainSurahViewState extends State<MainSurahView> {
 
   // List of available reciters (with smaller file sizes preferred)
   final List<Map<String, String>> _reciterOptions = [
-    {'value': 'Hudhaify_32kbps', 'label': 'Hudhaify (32kbps)'},
-    {'value': 'Abdullah_Basfar_32kbps', 'label': 'Abdullah Basfar (32kbps)'},
-    {'value': 'Ibrahim_Akhdar_32kbps', 'label': 'Ibrahim Akhdar (32kbps)'},
-    {'value': 'Menshawi_16kbps', 'label': 'Menshawi (16kbps)'},
-    {'value': 'Muhammad_Ayyoub_32kbps', 'label': 'Muhammad Ayyoub (32kbps)'},
+    {
+      'value': 'AbdulSamad_64kbps_QuranExplorer.Com',
+      'label': 'Abdul Samad (64kbps)'
+    },
+    {
+      'value': 'Abdul_Basit_Murattal_192kbps',
+      'label': 'Abdul Basit Murattal (192kbps)'
+    },
     {
       'value': 'Abdul_Basit_Murattal_64kbps',
       'label': 'Abdul Basit Murattal (64kbps)'
+    },
+    {
+      'value': 'Abdullaah_3awwaad_Al-Juhaynee_128kbps',
+      'label': 'Abdullah Awwad Al-Juhaynee (128kbps)'
+    },
+    {'value': 'Abdullah_Basfar_192kbps', 'label': 'Abdullah Basfar (192kbps)'},
+    {'value': 'Abdullah_Basfar_32kbps', 'label': 'Abdullah Basfar (32kbps)'},
+    {
+      'value': 'Abdullah_Matroud_128kbps',
+      'label': 'Abdullah Matroud (128kbps)'
+    },
+    {
+      'value': 'Abdurrahmaan_As-Sudais_192kbps',
+      'label': 'Abdurrahmaan As-Sudais (192kbps)'
     },
     {
       'value': 'Abdurrahmaan_As-Sudais_64kbps',
       'label': 'Abdurrahmaan As-Sudais (64kbps)'
     },
     {
+      'value': 'Abu_Bakr_Ash-Shaatree_128kbps',
+      'label': 'Abu Bakr Ash-Shaatree (128kbps)'
+    },
+    {
       'value': 'Abu_Bakr_Ash-Shaatree_64kbps',
       'label': 'Abu Bakr Ash-Shaatree (64kbps)'
     },
+    {
+      'value': 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net',
+      'label': 'Ahmed ibn Ali al-Ajamy (128kbps)'
+    },
+    {'value': 'Akram_AlAlaqimy_128kbps', 'label': 'Akram AlAlaqimy (128kbps)'},
+    {'value': 'Alafasy_128kbps', 'label': 'Mishary Alafasy (128kbps)'},
     {'value': 'Alafasy_64kbps', 'label': 'Mishary Alafasy (64kbps)'},
+    {
+      'value': 'Ali_Hajjaj_AlSuesy_128kbps',
+      'label': 'Ali Hajjaj AlSuesy (128kbps)'
+    },
+    {'value': 'Ali_Jaber_64kbps', 'label': 'Ali Jaber (64kbps)'},
+    {'value': 'Ayman_Sowaid_64kbps', 'label': 'Ayman Sowaid (64kbps)'},
+    {'value': 'aziz_alili_128kbps', 'label': 'Aziz Alili (128kbps)'},
+    {'value': 'Fares_Abbad_64kbps', 'label': 'Fares Abbad (64kbps)'},
     {'value': 'Ghamadi_40kbps', 'label': 'Ghamadi (40kbps)'},
-    {'value': 'Maher_AlMuaiqly_64kbps', 'label': 'Maher Al Muaiqly (64kbps)'},
+    {'value': 'Hani_Rifai_192kbps', 'label': 'Hani Rifai (192kbps)'},
+    {'value': 'Hudhaify_128kbps', 'label': 'Hudhaify (128kbps)'},
+    {'value': 'Hudhaify_32kbps', 'label': 'Hudhaify (32kbps)'},
+    {'value': 'Husary_128kbps', 'label': 'Husary (128kbps)'},
     {'value': 'Husary_64kbps', 'label': 'Husary (64kbps)'},
+    {'value': 'Ibrahim_Akhdar_32kbps', 'label': 'Ibrahim Akhdar (32kbps)'},
+    {'value': 'Ibrahim_Akhdar_64kbps', 'label': 'Ibrahim Akhdar (64kbps)'},
+    {'value': 'Karim_Mansoori_40kbps', 'label': 'Karim Mansoori (40kbps)'},
+    {
+      'value': 'khalefa_al_tunaiji_64kbps',
+      'label': 'Khalefa Al Tunaiji (64kbps)'
+    },
+    {
+      'value': 'Khaalid_Abdullaah_al-Qahtaanee_192kbps',
+      'label': 'Khaalid Abdullaah al-Qahtaanee (192kbps)'
+    },
+    {
+      'value': 'mahmoud_ali_al_banna_32kbps',
+      'label': 'Mahmoud Ali Al Banna (32kbps)'
+    },
+    {'value': 'Maher_AlMuaiqly_64kbps', 'label': 'Maher Al Muaiqly (64kbps)'},
+    {'value': 'MaherAlMuaiqly128kbps', 'label': 'Maher Al Muaiqly (128kbps)'},
+    {'value': 'Menshawi_16kbps', 'label': 'Menshawi (16kbps)'},
+    {
+      'value': 'Minshawy_Mujawwad_192kbps',
+      'label': 'Minshawy Mujawwad (192kbps)'
+    },
+    {
+      'value': 'Mohammad_al_Tablaway_128kbps',
+      'label': 'Mohammad al Tablaway (128kbps)'
+    },
+    {
+      'value': 'Muhammad_AbdulKareem_128kbps',
+      'label': 'Muhammad AbdulKareem (128kbps)'
+    },
+    {'value': 'Muhammad_Ayyoub_128kbps', 'label': 'Muhammad Ayyoub (128kbps)'},
+    {'value': 'Muhammad_Ayyoub_32kbps', 'label': 'Muhammad Ayyoub (32kbps)'},
+    {
+      'value': 'Muhammad_Jibreel_128kbps',
+      'label': 'Muhammad Jibreel (128kbps)'
+    },
+    {'value': 'Muhsin_Al_Qasim_192kbps', 'label': 'Muhsin Al Qasim (192kbps)'},
+    {'value': 'Mustafa_Ismail_48kbps', 'label': 'Mustafa Ismail (48kbps)'},
+    {'value': 'Nabil_Rifa3i_48kbps', 'label': 'Nabil Rifa3i (48kbps)'},
+    {'value': 'Nasser_Alqatami_128kbps', 'label': 'Nasser Alqatami (128kbps)'},
+    {'value': 'Sahl_Yassin_128kbps', 'label': 'Sahl Yassin (128kbps)'},
+    {
+      'value': 'Salaah_AbdulRahman_Bukhatir_128kbps',
+      'label': 'Salaah AbdulRahman Bukhatir (128kbps)'
+    },
+    {'value': 'Salah_Al_Budair_128kbps', 'label': 'Salah Al Budair (128kbps)'},
+    {
+      'value': 'Saood_ash-Shuraym_128kbps',
+      'label': 'Saood ash-Shuraym (128kbps)'
+    },
+    {'value': 'Yaser_Salamah_128kbps', 'label': 'Yaser Salamah (128kbps)'},
+    {
+      'value': 'Yasser_Ad-Dussary_128kbps',
+      'label': 'Yasser Ad-Dussary (128kbps)'
+    },
   ];
 
   final Map<int, Map<String, dynamic>> _surahInfo = SurahData.surahInfo;
