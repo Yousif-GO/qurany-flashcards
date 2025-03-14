@@ -87,6 +87,144 @@ class _MainSurahViewState extends State<MainSurahView> {
   Set<int> _fullyRevealedAyahs = {};
   String? _surahBismillah;
 
+  // Add new state variables for Quran text selection and font size
+  String _selectedQuranText = 'quran-uthmani (1).txt';
+  double _quranFontSize = 24.0; // Default font size
+
+  // Add reciter selection
+  String _selectedReciter = 'Hudhaify_32kbps';
+
+  // List of available Quran text files
+  final List<Map<String, String>> _quranTextOptions = [
+    {
+      'value': 'quran-uthmani (1).txt',
+      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)'
+    },
+    {
+      'value': 'quran-uthmani-min.txt',
+      'label':
+          'Uthmani Minimal (text with a minimal number of diacritics and symbols. (الحَمدُ لِلَّهِ رَبِّ العـٰلَمينَ)'
+    }
+  ];
+
+  // List of available reciters (with smaller file sizes preferred)
+  final List<Map<String, String>> _reciterOptions = [
+    {
+      'value': 'AbdulSamad_64kbps_QuranExplorer.Com',
+      'label': 'Abdul Samad (64kbps)'
+    },
+    {
+      'value': 'Abdul_Basit_Murattal_192kbps',
+      'label': 'Abdul Basit Murattal (192kbps)'
+    },
+    {
+      'value': 'Abdul_Basit_Murattal_64kbps',
+      'label': 'Abdul Basit Murattal (64kbps)'
+    },
+    {
+      'value': 'Abdullaah_3awwaad_Al-Juhaynee_128kbps',
+      'label': 'Abdullah Awwad Al-Juhaynee (128kbps)'
+    },
+    {'value': 'Abdullah_Basfar_192kbps', 'label': 'Abdullah Basfar (192kbps)'},
+    {'value': 'Abdullah_Basfar_32kbps', 'label': 'Abdullah Basfar (32kbps)'},
+    {
+      'value': 'Abdullah_Matroud_128kbps',
+      'label': 'Abdullah Matroud (128kbps)'
+    },
+    {
+      'value': 'Abdurrahmaan_As-Sudais_192kbps',
+      'label': 'Abdurrahmaan As-Sudais (192kbps)'
+    },
+    {
+      'value': 'Abdurrahmaan_As-Sudais_64kbps',
+      'label': 'Abdurrahmaan As-Sudais (64kbps)'
+    },
+    {
+      'value': 'Abu_Bakr_Ash-Shaatree_128kbps',
+      'label': 'Abu Bakr Ash-Shaatree (128kbps)'
+    },
+    {
+      'value': 'Abu_Bakr_Ash-Shaatree_64kbps',
+      'label': 'Abu Bakr Ash-Shaatree (64kbps)'
+    },
+    {
+      'value': 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net',
+      'label': 'Ahmed ibn Ali al-Ajamy (128kbps)'
+    },
+    {'value': 'Akram_AlAlaqimy_128kbps', 'label': 'Akram AlAlaqimy (128kbps)'},
+    {'value': 'Alafasy_128kbps', 'label': 'Mishary Alafasy (128kbps)'},
+    {'value': 'Alafasy_64kbps', 'label': 'Mishary Alafasy (64kbps)'},
+    {
+      'value': 'Ali_Hajjaj_AlSuesy_128kbps',
+      'label': 'Ali Hajjaj AlSuesy (128kbps)'
+    },
+    {'value': 'Ali_Jaber_64kbps', 'label': 'Ali Jaber (64kbps)'},
+    {'value': 'Ayman_Sowaid_64kbps', 'label': 'Ayman Sowaid (64kbps)'},
+    {'value': 'aziz_alili_128kbps', 'label': 'Aziz Alili (128kbps)'},
+    {'value': 'Fares_Abbad_64kbps', 'label': 'Fares Abbad (64kbps)'},
+    {'value': 'Ghamadi_40kbps', 'label': 'Ghamadi (40kbps)'},
+    {'value': 'Hani_Rifai_192kbps', 'label': 'Hani Rifai (192kbps)'},
+    {'value': 'Hudhaify_128kbps', 'label': 'Hudhaify (128kbps)'},
+    {'value': 'Hudhaify_32kbps', 'label': 'Hudhaify (32kbps)'},
+    {'value': 'Husary_128kbps', 'label': 'Husary (128kbps)'},
+    {'value': 'Husary_64kbps', 'label': 'Husary (64kbps)'},
+    {'value': 'Ibrahim_Akhdar_32kbps', 'label': 'Ibrahim Akhdar (32kbps)'},
+    {'value': 'Ibrahim_Akhdar_64kbps', 'label': 'Ibrahim Akhdar (64kbps)'},
+    {'value': 'Karim_Mansoori_40kbps', 'label': 'Karim Mansoori (40kbps)'},
+    {
+      'value': 'khalefa_al_tunaiji_64kbps',
+      'label': 'Khalefa Al Tunaiji (64kbps)'
+    },
+    {
+      'value': 'Khaalid_Abdullaah_al-Qahtaanee_192kbps',
+      'label': 'Khaalid Abdullaah al-Qahtaanee (192kbps)'
+    },
+    {
+      'value': 'mahmoud_ali_al_banna_32kbps',
+      'label': 'Mahmoud Ali Al Banna (32kbps)'
+    },
+    {'value': 'Maher_AlMuaiqly_64kbps', 'label': 'Maher Al Muaiqly (64kbps)'},
+    {'value': 'MaherAlMuaiqly128kbps', 'label': 'Maher Al Muaiqly (128kbps)'},
+    {'value': 'Menshawi_16kbps', 'label': 'Menshawi (16kbps)'},
+    {
+      'value': 'Minshawy_Mujawwad_192kbps',
+      'label': 'Minshawy Mujawwad (192kbps)'
+    },
+    {
+      'value': 'Mohammad_al_Tablaway_128kbps',
+      'label': 'Mohammad al Tablaway (128kbps)'
+    },
+    {
+      'value': 'Muhammad_AbdulKareem_128kbps',
+      'label': 'Muhammad AbdulKareem (128kbps)'
+    },
+    {'value': 'Muhammad_Ayyoub_128kbps', 'label': 'Muhammad Ayyoub (128kbps)'},
+    {'value': 'Muhammad_Ayyoub_32kbps', 'label': 'Muhammad Ayyoub (32kbps)'},
+    {
+      'value': 'Muhammad_Jibreel_128kbps',
+      'label': 'Muhammad Jibreel (128kbps)'
+    },
+    {'value': 'Muhsin_Al_Qasim_192kbps', 'label': 'Muhsin Al Qasim (192kbps)'},
+    {'value': 'Mustafa_Ismail_48kbps', 'label': 'Mustafa Ismail (48kbps)'},
+    {'value': 'Nabil_Rifa3i_48kbps', 'label': 'Nabil Rifa3i (48kbps)'},
+    {'value': 'Nasser_Alqatami_128kbps', 'label': 'Nasser Alqatami (128kbps)'},
+    {'value': 'Sahl_Yassin_128kbps', 'label': 'Sahl Yassin (128kbps)'},
+    {
+      'value': 'Salaah_AbdulRahman_Bukhatir_128kbps',
+      'label': 'Salaah AbdulRahman Bukhatir (128kbps)'
+    },
+    {'value': 'Salah_Al_Budair_128kbps', 'label': 'Salah Al Budair (128kbps)'},
+    {
+      'value': 'Saood_ash-Shuraym_128kbps',
+      'label': 'Saood ash-Shuraym (128kbps)'
+    },
+    {'value': 'Yaser_Salamah_128kbps', 'label': 'Yaser Salamah (128kbps)'},
+    {
+      'value': 'Yasser_Ad-Dussary_128kbps',
+      'label': 'Yasser Ad-Dussary (128kbps)'
+    },
+  ];
+
   final Map<int, Map<String, dynamic>> _surahInfo = SurahData.surahInfo;
 
   static Map<int, Set<int>> _forgottenAyahs =
@@ -406,6 +544,9 @@ class _MainSurahViewState extends State<MainSurahView> {
     // Initialize _currentReviewAyah based on forgotten ayahs
     _currentReviewAyah = _getForgottenAyahCount();
 
+    // Load saved preferences for Quran text and font size
+    _loadTextPreferences();
+
     _loadData().then((_) {
       setState(() {
         // Check for review ayahs
@@ -533,6 +674,24 @@ class _MainSurahViewState extends State<MainSurahView> {
     super.dispose();
   }
 
+  Future<void> _loadTextPreferences() async {
+    final prefs = await shared_prefs.SharedPreferences.getInstance();
+    setState(() {
+      _selectedQuranText =
+          prefs.getString('selectedQuranText') ?? 'quran-uthmani (1).txt';
+      _quranFontSize = prefs.getDouble('quranFontSize') ?? 24.0;
+      _selectedReciter =
+          prefs.getString('selectedReciter') ?? 'Hudhaify_32kbps';
+    });
+  }
+
+  Future<void> _saveTextPreferences() async {
+    final prefs = await shared_prefs.SharedPreferences.getInstance();
+    await prefs.setString('selectedQuranText', _selectedQuranText);
+    await prefs.setDouble('quranFontSize', _quranFontSize);
+    await prefs.setString('selectedReciter', _selectedReciter);
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -543,7 +702,7 @@ class _MainSurahViewState extends State<MainSurahView> {
       final mappingText =
           await rootBundle.loadString('assets/Txt files/page_mapping.txt');
       final quranText =
-          await rootBundle.loadString('assets/Txt files/quran-uthmani (1).txt');
+          await rootBundle.loadString('assets/Txt files/${_selectedQuranText}');
 
       // Get the appropriate tafsir file based on language
       String tafsirFile;
@@ -673,13 +832,28 @@ class _MainSurahViewState extends State<MainSurahView> {
         });
       }
 
+      // Add first ayah of next page
+      int nextPage = widget.pageNumber == 604 ? 1 : widget.pageNumber + 1;
+      final nextPageAyahs = _pageMapping[nextPage.toString()] ?? [];
+      if (nextPageAyahs.isNotEmpty) {
+        final firstNextAyah = nextPageAyahs.first.split('|');
+        final nextSurah = int.parse(firstNextAyah[0]);
+        final nextAyah = int.parse(firstNextAyah[1]);
+        final nextMapKey = '$nextSurah|$nextAyah';
+
+        ayahs.add({
+          'surah': nextSurah,
+          'ayah': nextAyah,
+          'verse': quranMap[nextMapKey] ?? '',
+          'tafsir': _tafsirMap[nextMapKey] ?? '',
+          'translation': _translationMap[nextMapKey] ?? '',
+          'isNextPage': true, // Mark this ayah as belonging to next page
+        });
+      }
+
       setState(() {
         _pageAyahs = ayahs;
-        if (ayahs.isNotEmpty) {
-          _currentAyahData = [ayahs.first];
-        } else {
-          _currentAyahData = [];
-        }
+        _currentAyahData = [ayahs.first];
         _isLoading = false;
       });
     } catch (e) {
@@ -705,11 +879,12 @@ class _MainSurahViewState extends State<MainSurahView> {
       if (kIsWeb) {
         // For web, stream directly from URL
         final url =
-            'https://everyayah.com/data/Hudhaify_32kbps/${surahStr}${ayahStr}.mp3';
+            'https://everyayah.com/data/${_selectedReciter}/${surahStr}${ayahStr}.mp3';
         await _audioPlayer.play(UrlSource(url));
       } else {
         // For mobile, use local file with download prompt
-        final audioFile = await AudioService.getAudioPath(surahStr, ayahStr);
+        final audioFile = await AudioService.getAudioPath(
+            surahStr, ayahStr, _selectedReciter);
         final prefs = await shared_prefs.SharedPreferences.getInstance();
         final hideDownloadPrompt =
             prefs.getBool('hideAudioDownloadPrompt') ?? false;
@@ -1038,6 +1213,8 @@ class _MainSurahViewState extends State<MainSurahView> {
           _isPlaying = false;
         });
       }
+    } else if (reviewAyahs.isEmpty) {
+      _navigateToNextPage();
     }
   }
 
@@ -1160,10 +1337,8 @@ class _MainSurahViewState extends State<MainSurahView> {
 
     // Calculate responsive font sizes based on screen dimensions
     double getQuranFontSize() {
-      final screenWidth = MediaQuery.of(context).size.width;
-      if (screenWidth <= 600) return screenWidth * 0.06;
-      if (screenWidth <= 1024) return screenWidth * 0.04;
-      return 24.0; // Default size for larger screens
+      // Use the user-selected font size instead of calculating based on screen width
+      return _quranFontSize;
     }
 
     double getSymbolFontSize() {
@@ -1219,6 +1394,14 @@ class _MainSurahViewState extends State<MainSurahView> {
               ),
               centerTitle: true,
               actions: [
+                // Add settings icon for text options
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    _showTextSettingsDialog(context);
+                  },
+                  tooltip: 'Text Settings',
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(
@@ -1570,7 +1753,6 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                       fontSize:
                                                           getQuranFontSize(),
                                                       height: 1.5,
-                                                      letterSpacing: 0,
                                                       color: Color(0xFF2B4141),
                                                     ),
                                                     children:
@@ -1590,6 +1772,57 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                       final isRevealed =
                                                           isPartiallyRevealed ||
                                                               isFullyRevealed;
+
+                                                      if (ayah['isNextPage'] ==
+                                                          true) {
+                                                        return TextSpan(
+                                                          children: [
+                                                            TextSpan(
+                                                              text:
+                                                                  '\n\n━━━━ Next Page ━━━━\n\n',
+                                                              style: TextStyle(
+                                                                color: Color(
+                                                                    0xFF417D7A),
+                                                                fontSize:
+                                                                    getQuranFontSize() *
+                                                                        0.6,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text: _showFirstWordOnly
+                                                                  ? (isFullyRevealed
+                                                                      ? ayah[
+                                                                          'verse']
+                                                                      : (isPartiallyRevealed
+                                                                          ? ayah['verse'].toString().split(' ')[0] +
+                                                                              ' ...'
+                                                                          : ''))
+                                                                  : (isRevealed
+                                                                      ? ayah[
+                                                                          'verse']
+                                                                      : ''),
+                                                              style: TextStyle(
+                                                                color: isRevealed
+                                                                    ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex +
+                                                                                1) ??
+                                                                            false
+                                                                        ? Colors
+                                                                            .orange
+                                                                        : Colors.grey[
+                                                                            600]!)
+                                                                    : Colors
+                                                                        .white,
+                                                                fontStyle:
+                                                                    FontStyle
+                                                                        .italic,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }
 
                                                       return TextSpan(
                                                         children: [
@@ -2016,6 +2249,107 @@ class _MainSurahViewState extends State<MainSurahView> {
           ),
         if (widget.isGroupReading) _buildRoomInfo(),
       ],
+    );
+  }
+
+  // Add a method to show the text settings dialog
+  void _showTextSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Text & Audio Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Quran Text:'),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedQuranText,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedQuranText = newValue;
+                          });
+                        }
+                      },
+                      items: _quranTextOptions.map<DropdownMenuItem<String>>(
+                          (Map<String, String> option) {
+                        return DropdownMenuItem<String>(
+                          value: option['value'],
+                          child: Text(option['label']!),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20),
+                    Text('Font Size: ${_quranFontSize.toStringAsFixed(1)}'),
+                    Slider(
+                      value: _quranFontSize,
+                      min: 16.0,
+                      max: 40.0,
+                      divisions: 12,
+                      label: _quranFontSize.toStringAsFixed(1),
+                      onChanged: (double value) {
+                        setState(() {
+                          _quranFontSize = value;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    Text('Reciter:'),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedReciter,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedReciter = newValue;
+                          });
+                        }
+                      },
+                      items: _reciterOptions.map<DropdownMenuItem<String>>(
+                          (Map<String, String> option) {
+                        return DropdownMenuItem<String>(
+                          value: option['value'],
+                          child: Text(option['label']!),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Apply'),
+                  onPressed: () {
+                    // Update the main state and reload data if text file changed
+                    this.setState(() {
+                      _quranFontSize = _quranFontSize;
+                      if (_selectedQuranText != this._selectedQuranText) {
+                        this._selectedQuranText = _selectedQuranText;
+                        _loadData(); // Reload data with new text file
+                      }
+                      this._selectedReciter = _selectedReciter;
+                    });
+                    _saveTextPreferences(); // Save preferences
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

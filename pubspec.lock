@@ -177,14 +177,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
-  cross_file:
-    dependency: transitive
-    description:
-      name: cross_file
-      sha256: "7caf6a750a0c04effbb52a676dce9a4a592e10ad35c34d6d2d0e4811160d5670"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.4+2"
   crypto:
     dependency: transitive
     description:
@@ -358,14 +350,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.4"
-  flutter_share:
-    dependency: "direct main"
-    description:
-      name: flutter_share
-      sha256: ae12c1cea13b35926a109824ffac601531e40cb94ad53eeae58625eceb3eaaaa
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -480,14 +464,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.15.0"
-  mime:
-    dependency: transitive
-    description:
-      name: mime
-      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   nested:
     dependency: transitive
     description:
@@ -648,22 +624,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  share_plus:
-    dependency: "direct main"
-    description:
-      name: share_plus
-      sha256: "6327c3f233729374d0abaafd61f6846115b2a481b4feddd8534211dc10659400"
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.1.3"
-  share_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: share_plus_platform_interface
-      sha256: cc012a23fc2d479854e6c80150696c4a5f5bb62cb89af4de1c505cf78d0a5d0b
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.2"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -830,7 +790,7 @@ packages:
     source: hosted
     version: "0.7.2"
   timezone:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: timezone
       sha256: "2236ec079a174ce07434e89fcd3fcda430025eb7692244139a9cf54fdcf1fc7d"
@@ -981,14 +941,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
-  win32:
-    dependency: transitive
-    description:
-      name: win32
-      sha256: "154360849a56b7b67331c21f09a386562d88903f90a1099c5987afc1912e1f29"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.10.0"
   xdg_directories:
     dependency: transitive
     description:
