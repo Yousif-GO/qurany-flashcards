@@ -187,13 +187,19 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
           return;
         }
 
+        // Create room and store the result
         await _firebaseService.createRoom(
           groupName: _groupNameController.text,
           khatmaName: _khatmaNameController.text,
           userName: _userNameController.text,
         );
 
-        // Show share dialog immediately after creation
+        // Fetch the room details
+        roomDetails = await _firebaseService.getRoomDetails(
+            groupName: _groupNameController.text,
+            khatmaName: _khatmaNameController.text);
+
+        // Now show the dialog
         _showShareDialog();
       } else {
         // Join existing room logic
@@ -297,62 +303,68 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
 
   void _showShareDialog() {
     // Calculate juz progress
-    final allPagesRead = roomDetails!['pages']
-        .entries
-        .where((page) => page.value['completed'] == true)
-        .map((page) => int.parse(page.key))
-        .toList();
+    final uncompletedJuzInfo = 'No pages read yet';
+    String roomInfo;
 
-    final uncompletedJuz = <int>[];
-    final juzPages = {
-      1: [1, 21],
-      2: [22, 41],
-      3: [42, 61],
-      4: [62, 81],
-      5: [82, 101],
-      6: [102, 121],
-      7: [122, 141],
-      8: [142, 161],
-      9: [162, 181],
-      10: [182, 201],
-      11: [202, 221],
-      12: [222, 241],
-      13: [242, 261],
-      14: [262, 281],
-      15: [282, 301],
-      16: [302, 321],
-      17: [322, 341],
-      18: [342, 361],
-      19: [362, 381],
-      20: [382, 401],
-      21: [402, 421],
-      22: [422, 441],
-      23: [442, 461],
-      24: [462, 481],
-      25: [482, 501],
-      26: [502, 521],
-      27: [522, 541],
-      28: [542, 561],
-      29: [562, 581],
-      30: [582, 604],
-    };
-
-    for (int juz = 1; juz <= 30; juz++) {
-      final startPage = juzPages[juz]![0];
-      final endPage = juzPages[juz]![1];
-
-      final pagesInJuz = allPagesRead
-          .where((page) => page >= startPage && page <= endPage)
+    // If roomDetails is available, calculate progress
+    if (roomDetails != null) {
+      final allPagesRead = roomDetails!['pages']
+          .entries
+          .where((page) => page.value['completed'] == true)
+          .map((page) => int.parse(page.key))
           .toList();
 
-      if (pagesInJuz.length < (endPage - startPage + 1)) {
-        uncompletedJuz.add(juz);
-      }
-    }
+      final uncompletedJuz = <int>[];
+      final juzPages = {
+        1: [1, 21],
+        2: [22, 41],
+        3: [42, 61],
+        4: [62, 81],
+        5: [82, 101],
+        6: [102, 121],
+        7: [122, 141],
+        8: [142, 161],
+        9: [162, 181],
+        10: [182, 201],
+        11: [202, 221],
+        12: [222, 241],
+        13: [242, 261],
+        14: [262, 281],
+        15: [282, 301],
+        16: [302, 321],
+        17: [322, 341],
+        18: [342, 361],
+        19: [362, 381],
+        20: [382, 401],
+        21: [402, 421],
+        22: [422, 441],
+        23: [442, 461],
+        24: [462, 481],
+        25: [482, 501],
+        26: [502, 521],
+        27: [522, 541],
+        28: [542, 561],
+        29: [562, 581],
+        30: [582, 604],
+      };
 
-    final uncompletedJuzInfo = uncompletedJuz.isEmpty
-        ? 'All juz completed! 🎉'
-        : 'Juz to complete: ${uncompletedJuz.join(', ')}';
+      for (int juz = 1; juz <= 30; juz++) {
+        final startPage = juzPages[juz]![0];
+        final endPage = juzPages[juz]![1];
+
+        final pagesInJuz = allPagesRead
+            .where((page) => page >= startPage && page <= endPage)
+            .toList();
+
+        if (pagesInJuz.length < (endPage - startPage + 1)) {
+          uncompletedJuz.add(juz);
+        }
+      }
+
+      final uncompletedJuzInfo = uncompletedJuz.isEmpty
+          ? 'All juz completed! 🎉'
+          : 'Juz to complete: ${uncompletedJuz.join(', ')}';
+    }
 
     // Encode both names into base64
     final encodedData = _encodeToBase64(
@@ -361,7 +373,7 @@ class _QuranRoomScreenState extends State<QuranRoomScreen> {
     final webLink = 'https://quranycards.com/join?code=$encodedData';
     final appLink = 'quranycards://join?code=$encodedData';
 
-    final roomInfo = '''🕌 Join our Quran Khatma!
+    roomInfo = '''🕌 Join our Quran Khatma!
 
 Group: ${_groupNameController.text}
 Khatma: ${_khatmaNameController.text}

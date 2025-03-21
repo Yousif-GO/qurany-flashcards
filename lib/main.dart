@@ -1155,11 +1155,23 @@ class _SimpleListState extends State<SimpleList> {
                               ),
                           ],
                         ),
-                        Text(
-                          _surahInfo[surahNum]!['name_en']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              _surahInfo[surahNum]!['name_en']!,
+                              style: TextStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '(${allPages.first})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -1749,7 +1749,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                   text: TextSpan(
                                                     style: TextStyle(
                                                       fontFamily:
-                                                          'Scheherazade',
+                                                          '_Uthmanic_hafs',
                                                       fontSize:
                                                           getQuranFontSize(),
                                                       height: 1.5,
@@ -1839,7 +1839,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                 : ayah['verse'],
                                                             style: TextStyle(
                                                               fontFamily:
-                                                                  'Scheherazade',
+                                                                  '_Uthmanic_hafs',
                                                               fontSize:
                                                                   getQuranFontSize(),
                                                               height: 1.5,
@@ -1872,7 +1872,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                 ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
                                                             style: TextStyle(
                                                               fontFamily:
-                                                                  'Scheherazade',
+                                                                  '_Uthmanic_hafs',
                                                               fontSize:
                                                                   getQuranFontSize() *
                                                                       0.8,

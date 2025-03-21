@@ -72,3 +72,6 @@ flutter:
     - family: _KFGQPCAn
       fonts:
         - asset: assets/fonts/_KFGQPCAnRegular.ttf
+    - family: _Uthmanic_hafs
+      fonts:
+        - asset: assets/fonts/uthmanic_hafs_v20.ttf
