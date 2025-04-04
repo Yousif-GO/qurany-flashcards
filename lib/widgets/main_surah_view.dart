@@ -99,7 +99,7 @@ class _MainSurahViewState extends State<MainSurahView> {
     {
       'value': 'quran-uthmani (1).txt',
       'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
-      'fontFamily': '_Othmani',
+      'fontFamily': '_Uthmanic_hafs_modified',
     },
     {
       'value': 'quran-uthmani-min.txt',
