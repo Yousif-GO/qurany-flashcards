@@ -88,7 +88,7 @@ class _MainSurahViewState extends State<MainSurahView> {
   String? _surahBismillah;
 
   // Add new state variables for Quran text selection and font size
-  String _selectedQuranText = 'quran-uthmani (1).txt';
+  String _selectedQuranText = 'quran-uthmani-min.txt';
   double _quranFontSize = 24.0; // Default font size
 
   // Add reciter selection
@@ -98,12 +98,14 @@ class _MainSurahViewState extends State<MainSurahView> {
   final List<Map<String, String>> _quranTextOptions = [
     {
       'value': 'quran-uthmani (1).txt',
-      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)'
+      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
+      'fontFamily': '_Uthmanic_hafs_modified',
     },
     {
       'value': 'quran-uthmani-min.txt',
       'label':
-          'Uthmani Minimal (text with a minimal number of diacritics and symbols. (الحَمدُ لِلَّهِ رَبِّ العـٰلَمينَ)'
+          'Uthmani Minimal (text with a minimal number of diacritics and symbols. (الحَمدُ لِلَّهِ رَبِّ العـٰلَمينَ)',
+      'fontFamily': '_Othmani',
     }
   ];
 
@@ -1749,7 +1751,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                   text: TextSpan(
                                                     style: TextStyle(
                                                       fontFamily:
-                                                          'Scheherazade',
+                                                          _getCurrentFontFamily(), // Use the dynamic font family
                                                       fontSize:
                                                           getQuranFontSize(),
                                                       height: 1.5,
@@ -1839,7 +1841,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                 : ayah['verse'],
                                                             style: TextStyle(
                                                               fontFamily:
-                                                                  'Scheherazade',
+                                                                  _getCurrentFontFamily(), // Use the dynamic font family
                                                               fontSize:
                                                                   getQuranFontSize(),
                                                               height: 1.5,
@@ -1872,13 +1874,12 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                                 ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
                                                             style: TextStyle(
                                                               fontFamily:
-                                                                  'Scheherazade',
+                                                                  _getCurrentFontFamily(), // Use the dynamic font family
                                                               fontSize:
                                                                   getQuranFontSize() *
                                                                       0.8,
                                                               color: Color(
                                                                   0xFF417D7A),
-// Light gray background
                                                             ),
                                                           ),
                                                         ],
@@ -2281,7 +2282,12 @@ class _MainSurahViewState extends State<MainSurahView> {
                           (Map<String, String> option) {
                         return DropdownMenuItem<String>(
                           value: option['value'],
-                          child: Text(option['label']!),
+                          child: Text(
+                            option['label']!,
+                            style: TextStyle(
+                              fontFamily: option['fontFamily'],
+                            ),
+                          ),
                         );
                       }).toList(),
                     ),
@@ -2351,6 +2357,19 @@ class _MainSurahViewState extends State<MainSurahView> {
         );
       },
     );
+  }
+
+  // Add this helper method to get the current font family
+  String _getCurrentFontFamily() {
+    // Find the selected option in the list
+    final selectedOption = _quranTextOptions.firstWhere(
+      (option) => option['value'] == _selectedQuranText,
+      orElse: () =>
+          {'value': _selectedQuranText, 'fontFamily': '_Uthmanic_hafs'},
+    );
+
+    // Return the font family from the selected option
+    return selectedOption['fontFamily'] ?? '_Uthmanic_hafs';
   }
 }
 

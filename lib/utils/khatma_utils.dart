@@ -30,11 +30,11 @@ class KhatmaUtils {
     final memberRankings = sortedMembers.asMap().entries.map((entry) {
       int rank = entry.key + 1;
       String medal = rank == 1
-          ? '🥇'
+          ? '•'
           : rank == 2
-              ? '🥈'
+              ? '•'
               : rank == 3
-                  ? '🥉'
+                  ? '•'
                   : '•';
       return '$medal ${entry.value.key}: ${entry.value.value} pages';
     }).join('\n');
@@ -61,10 +61,9 @@ Khatma: ${roomDetails['khatmaName']}
 👥 Member Contributions(JazakAllah Khair):
 $memberRankings
 
-💭 $randomQuote
 
 Join us in this blessed journey!
-https://qurany-flashcards.web.app/join?code=${Uri.encodeComponent(EncodingService.encodeToBase64('${roomDetails['groupName']}|${roomDetails['khatmaName']}'))}
+https://quranycards.com/join?code=${Uri.encodeComponent(EncodingService.encodeToBase64('${roomDetails['groupName']}|${roomDetails['khatmaName']}'))}
 
 ✨ Using Qurany Cards Pro
 • No ads
