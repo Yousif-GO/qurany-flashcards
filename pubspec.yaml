@@ -75,3 +75,6 @@ flutter:
     - family: _Uthmanic_hafs
       fonts:
         - asset: assets/fonts/uthmanic_hafs_v20.ttf
+    - family: _Uthmanic_hafs_modified
+      fonts:
+        - asset: assets/fonts/uthmanic_hafs_v20_mod_u06df.ttf
