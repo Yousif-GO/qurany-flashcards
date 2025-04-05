@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import '../models/comment.dart';
 
 class CommentsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Add a new comment
   Future<void> addComment({
@@ -10,12 +13,27 @@ class CommentsService {
     required String userName,
     required int pageNumber,
     required String groupId,
+    File? audioFile,
   }) async {
     final commentDoc = _firestore
         .collection('quranRooms')
         .doc(groupId)
         .collection('comments')
         .doc();
+
+    String? audioUrl;
+
+    // Upload audio file if provided
+    if (audioFile != null) {
+      final audioRef = _storage
+          .ref()
+          .child('comments_audio')
+          .child(groupId)
+          .child('${commentDoc.id}.m4a');
+
+      await audioRef.putFile(audioFile);
+      audioUrl = await audioRef.getDownloadURL();
+    }
 
     final comment = Comment(
       id: commentDoc.id,
@@ -26,6 +44,7 @@ class CommentsService {
       groupId: groupId,
       upvotes: 0,
       upvotedBy: [],
+      audioUrl: audioUrl,
     );
 
     await commentDoc.set(comment.toMap());
@@ -79,6 +98,30 @@ class CommentsService {
 
   // Delete comment
   Future<void> deleteComment(String groupId, String commentId) async {
+    // Get the comment to check if it has audio
+    final commentDoc = await _firestore
+        .collection('quranRooms')
+        .doc(groupId)
+        .collection('comments')
+        .doc(commentId)
+        .get();
+
+    if (commentDoc.exists) {
+      final data = commentDoc.data();
+      final audioUrl = data?['audioUrl'];
+
+      // Delete audio file if it exists
+      if (audioUrl != null) {
+        try {
+          final ref = _storage.refFromURL(audioUrl);
+          await ref.delete();
+        } catch (e) {
+          print('Error deleting audio file: $e');
+        }
+      }
+    }
+
+    // Delete the comment document
     await _firestore
         .collection('quranRooms')
         .doc(groupId)

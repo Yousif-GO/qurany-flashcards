@@ -9,6 +9,7 @@ class Comment {
   final String groupId;
   final int upvotes;
   final List<String> upvotedBy;
+  final String? audioUrl;
 
   Comment({
     required this.id,
@@ -19,6 +20,7 @@ class Comment {
     required this.groupId,
     this.upvotes = 0,
     this.upvotedBy = const [],
+    this.audioUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +33,7 @@ class Comment {
       'groupId': groupId,
       'upvotes': upvotes,
       'upvotedBy': upvotedBy,
+      'audioUrl': audioUrl,
     };
   }
 
@@ -44,6 +47,7 @@ class Comment {
       groupId: map['groupId'],
       upvotes: map['upvotes'] ?? 0,
       upvotedBy: List<String>.from(map['upvotedBy'] ?? []),
+      audioUrl: map['audioUrl'],
     );
   }
 }
