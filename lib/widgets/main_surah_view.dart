@@ -104,8 +104,14 @@ class _MainSurahViewState extends State<MainSurahView> {
   final List<Map<String, String>> _quranTextOptions = [
     {
       'value': 'quran-uthmani (1).txt',
-      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
+      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
       'fontFamily': '_Uthmanic_hafs_modified',
+    },
+    {
+      'value': 'quran-uthmani-nodots_sckeleton.txt',
+      'label':
+          'Skeleton Uthmani Script,mimicking the Oldest written Quran (for memorization testing) (ٱلحمد للہ رٮ ٱلعـلمٮں)',
+      'fontFamily': '_Othmani',
     }
   ];
   final List<Map<String, String>> _quranArabicTafsir = [
@@ -1046,7 +1052,7 @@ class _MainSurahViewState extends State<MainSurahView> {
               _currentWordIndex = 0;
 
               // Check if we're at the last standard ayah and there's a next page preview ayah
-              if (_currentAyah > _pageAyahs.length - 1 &&
+              if (_currentAyah > _pageAyahs.length &&
                   _pageAyahs.last['isNextPage'] == true) {
                 // Move to the next page
                 _navigateToNextPage();
@@ -1963,195 +1969,10 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                       height: 1.5,
                                                       color: Color(0xFF2B4141),
                                                     ),
+                                                    // Concatenate all ayahs into a single string to ensure proper text flow
                                                     children:
-                                                        surahAyahs.map((ayah) {
-                                                      final ayahIndex =
-                                                          _pageAyahs.indexOf(
-                                                                  ayah) +
-                                                              1;
-                                                      final isPartiallyRevealed =
-                                                          _partiallyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isFullyRevealed =
-                                                          _fullyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isRevealed =
-                                                          isPartiallyRevealed ||
-                                                              isFullyRevealed;
-
-                                                      if (ayah['isNextPage'] ==
-                                                          true) {
-                                                        List<InlineSpan>
-                                                            nextPageChildSpans =
-                                                            [];
-
-                                                        nextPageChildSpans
-                                                            .add(TextSpan(
-                                                          text:
-                                                              '\n\n━━━━ Next Page ━━━━\n\n',
-                                                          style: TextStyle(
-                                                            color: Color(
-                                                                0xFF417D7A),
-                                                            fontSize:
-                                                                getQuranFontSize() *
-                                                                    0.6,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ));
-
-                                                        if (_wordByWordMode) {
-                                                          // Handle word-by-word mode for next page ayah
-                                                          nextPageChildSpans.addAll(
-                                                              _buildWordByWordTextSpans(
-                                                                  ayah['verse'],
-                                                                  ayahIndex,
-                                                                  isRevealed ||
-                                                                      _revealedWords
-                                                                          .containsKey(
-                                                                              ayahIndex)));
-                                                        } else {
-                                                          // Standard display for next page ayah
-                                                          nextPageChildSpans
-                                                              .add(TextSpan(
-                                                            text: _showFirstWordOnly
-                                                                ? (isFullyRevealed
-                                                                    ? ayah[
-                                                                        'verse']
-                                                                    : (isPartiallyRevealed
-                                                                        ? ayah['verse'].toString().split(' ')[0] +
-                                                                            ' ...'
-                                                                        : ''))
-                                                                : (isRevealed
-                                                                    ? ayah[
-                                                                        'verse']
-                                                                    : ''),
-                                                            style: TextStyle(
-                                                              color: isRevealed
-                                                                  ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex +
-                                                                              1) ??
-                                                                          false
-                                                                      ? Colors
-                                                                          .orange
-                                                                      : Colors.grey[
-                                                                          600]!)
-                                                                  : Colors
-                                                                      .white,
-                                                              fontStyle:
-                                                                  FontStyle
-                                                                      .italic,
-                                                            ),
-                                                          ));
-                                                        }
-
-                                                        return TextSpan(
-                                                            children:
-                                                                nextPageChildSpans);
-                                                      }
-
-                                                      List<InlineSpan>
-                                                          childrenSpans = [];
-
-                                                      // Determine if all words are revealed in word-by-word mode
-                                                      bool allWordsRevealed =
-                                                          false;
-                                                      if (_wordByWordMode &&
-                                                          _revealedWords
-                                                              .containsKey(
-                                                                  ayahIndex)) {
-                                                        int totalWords =
-                                                            ayah['verse']
-                                                                .toString()
-                                                                .split(' ')
-                                                                .length;
-                                                        allWordsRevealed =
-                                                            _revealedWords[
-                                                                        ayahIndex]!
-                                                                    .length >=
-                                                                totalWords;
-                                                      }
-
-                                                      // Add the ayah text with appropriate styling
-                                                      if (_wordByWordMode) {
-                                                        // Word-by-word display
-                                                        childrenSpans.addAll(
-                                                            _buildWordByWordTextSpans(
-                                                                ayah['verse'],
-                                                                ayahIndex,
-                                                                isRevealed ||
-                                                                    _revealedWords
-                                                                        .containsKey(
-                                                                            ayahIndex)));
-                                                      } else {
-                                                        // Standard display mode
-                                                        childrenSpans.add(
-                                                          TextSpan(
-                                                            text: _showFirstWordOnly
-                                                                ? (isFullyRevealed
-                                                                    ? ayah[
-                                                                        'verse']
-                                                                    : (isPartiallyRevealed
-                                                                        ? ayah['verse'].toString().split(' ')[0] +
-                                                                            ' ...'
-                                                                        : ''))
-                                                                : ayah['verse'],
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  _getCurrentFontFamily(),
-                                                              fontSize:
-                                                                  getQuranFontSize(),
-                                                              height: 1.5,
-                                                              letterSpacing: 0,
-                                                              color: _showFirstWordOnly
-                                                                  ? (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white)
-                                                                  : (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white),
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }
-
-                                                      // Add the ayah marker based on mode and visibility condition
-                                                      if (!_wordByWordMode ||
-                                                          isFullyRevealed ||
-                                                          allWordsRevealed) {
-                                                        childrenSpans
-                                                            .add(TextSpan(
-                                                          text:
-                                                              ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                _getCurrentFontFamily(),
-                                                            fontSize:
-                                                                getQuranFontSize() *
-                                                                    0.8,
-                                                            color: Color(
-                                                                0xFF417D7A),
-                                                          ),
-                                                        ));
-                                                      }
-
-                                                      return TextSpan(
-                                                        children: childrenSpans,
-                                                      );
-                                                    }).toList(),
+                                                        _buildCombinedTextSpans(
+                                                            surahAyahs),
                                                   ),
                                                 ),
                                                 if (surahAyahs.isNotEmpty &&
@@ -2167,13 +1988,8 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                         .withOpacity(0.3),
                                                   ),
                                                   Text(
-                                                    _pageAyahs[(_currentAyah -
-                                                                2)
-                                                            .clamp(
-                                                                0,
-                                                                _pageAyahs
-                                                                        .length -
-                                                                    1)]['tafsir'] ??
+                                                    _pageAyahs[_getCurrentDisplayAyahIndex()]
+                                                            ['tafsir'] ??
                                                         '',
                                                     style: TextStyle(
                                                       fontSize:
@@ -2193,13 +2009,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                           getVerticalPadding() *
                                                               0.5),
                                                   Text(
-                                                    _pageAyahs[(_currentAyah -
-                                                                    2)
-                                                                .clamp(
-                                                                    0,
-                                                                    _pageAyahs
-                                                                            .length -
-                                                                        1)]
+                                                    _pageAyahs[_getCurrentDisplayAyahIndex()]
                                                             ['translation'] ??
                                                         '',
                                                     style: TextStyle(
@@ -2664,7 +2474,11 @@ class _MainSurahViewState extends State<MainSurahView> {
 
   // Helper method to build text spans for word-by-word display
   List<TextSpan> _buildWordByWordTextSpans(
-      String text, int ayahIndex, bool isRevealed) {
+      String text, int ayahIndex, bool isRevealed,
+      [bool isNextPage = false]) {
+    // Remove any potential newlines in the text
+    text = text.replaceAll('\n', ' ').trim();
+
     List<String> words = text.split(' ');
     List<TextSpan> wordSpans = [];
 
@@ -2677,6 +2491,11 @@ class _MainSurahViewState extends State<MainSurahView> {
     // Check if this ayah is in the review list (marked as forgotten)
     bool isInReview =
         _forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ?? false;
+
+    // Add a space at the beginning if this is not the first ayah
+    if (ayahIndex > 1 && !isNextPage) {
+      wordSpans.add(TextSpan(text: ' '));
+    }
 
     for (int i = 0; i < words.length; i++) {
       bool isWordRevealed = revealedIndices.contains(i);
@@ -2734,6 +2553,150 @@ class _MainSurahViewState extends State<MainSurahView> {
         ),
       ),
     );
+  }
+
+  // Helper method to get the correct index for tafsir and translation
+  int _getCurrentDisplayAyahIndex() {
+    // When in word-by-word mode, use the current ayah index directly
+    // Otherwise use the previous implementation (currentAyah - 2)
+    if (_wordByWordMode) {
+      return (_currentAyah - 1).clamp(0, _pageAyahs.length - 1);
+    } else {
+      return (_currentAyah - 2).clamp(0, _pageAyahs.length - 1);
+    }
+  }
+
+  // Helper method to build combined text spans
+  List<TextSpan> _buildCombinedTextSpans(
+      List<Map<String, dynamic>> surahAyahs) {
+    List<TextSpan> combinedSpans = [];
+    bool isFirstAyah = true;
+
+    for (var ayah in surahAyahs) {
+      final ayahIndex = _pageAyahs.indexOf(ayah) + 1;
+      final isPartiallyRevealed = _partiallyRevealedAyahs.contains(ayahIndex);
+      final isFullyRevealed = _fullyRevealedAyahs.contains(ayahIndex);
+      final isRevealed = isPartiallyRevealed || isFullyRevealed;
+
+      // Handle next page ayah differently
+      if (ayah['isNextPage'] == true) {
+        combinedSpans.add(TextSpan(
+          text: '\n\n━━━━ Next Page ━━━━\n\n',
+          style: TextStyle(
+            color: Color(0xFF417D7A),
+            fontSize: _quranFontSize * 0.6,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+
+        if (_wordByWordMode) {
+          // Handle word-by-word mode for next page ayah
+          combinedSpans.addAll(_buildWordByWordTextSpans(
+              ayah['verse'],
+              ayahIndex,
+              isRevealed || _revealedWords.containsKey(ayahIndex),
+              true)); // true means it's a next page ayah
+        } else {
+          // Standard display for next page ayah
+          combinedSpans.add(TextSpan(
+            text: _showFirstWordOnly
+                ? (isFullyRevealed
+                    ? ayah['verse']
+                    : (isPartiallyRevealed
+                        ? ayah['verse'].toString().split(' ')[0] + ' ...'
+                        : ''))
+                : (isRevealed ? ayah['verse'] : ''),
+            style: TextStyle(
+              color: isRevealed
+                  ? (_forgottenAyahs[widget.pageNumber]
+                              ?.contains(ayahIndex + 1) ??
+                          false
+                      ? Colors.orange
+                      : Colors.grey[600]!)
+                  : Colors.white,
+              fontStyle: FontStyle.italic,
+            ),
+          ));
+        }
+        continue; // Skip to the next ayah
+      }
+
+      // Add space between ayahs, but not before the first ayah
+      if (!isFirstAyah && !_wordByWordMode) {
+        combinedSpans.add(TextSpan(text: ' '));
+      }
+      isFirstAyah = false;
+
+      // Determine if all words are revealed in word-by-word mode
+      bool allWordsRevealed = false;
+      if (_wordByWordMode && _revealedWords.containsKey(ayahIndex)) {
+        int totalWords = ayah['verse'].toString().split(' ').length;
+        allWordsRevealed = _revealedWords[ayahIndex]!.length >= totalWords;
+      }
+
+      // Add the ayah text with appropriate styling
+      if (_wordByWordMode) {
+        // Word-by-word display
+        combinedSpans.addAll(_buildWordByWordTextSpans(
+            ayah['verse'],
+            ayahIndex,
+            isRevealed || _revealedWords.containsKey(ayahIndex),
+            false)); // false means it's not a next page ayah
+      } else {
+        // Standard display mode - ensure there are no newlines in the text
+        String verseText = _showFirstWordOnly
+            ? (isFullyRevealed
+                ? ayah['verse']
+                : (isPartiallyRevealed
+                    ? ayah['verse'].toString().split(' ')[0] + ' ...'
+                    : ''))
+            : ayah['verse'];
+
+        // Remove any potential newlines in the verse text
+        verseText = verseText.replaceAll('\n', ' ').trim();
+
+        combinedSpans.add(
+          TextSpan(
+            text: verseText,
+            style: TextStyle(
+              fontFamily: _getCurrentFontFamily(),
+              fontSize: _quranFontSize,
+              height: 1.5,
+              letterSpacing: 0,
+              color: _showFirstWordOnly
+                  ? (isRevealed
+                      ? (_forgottenAyahs[widget.pageNumber]
+                                  ?.contains(ayahIndex + 1) ??
+                              false
+                          ? Colors.orange
+                          : Color(0xFF2B4141))
+                      : Colors.white)
+                  : (isRevealed
+                      ? (_forgottenAyahs[widget.pageNumber]
+                                  ?.contains(ayahIndex + 1) ??
+                              false
+                          ? Colors.orange
+                          : Color(0xFF2B4141))
+                      : Colors.white),
+            ),
+          ),
+        );
+      }
+
+      // Add the ayah marker based on mode and visibility condition
+      if (!_wordByWordMode || isFullyRevealed || allWordsRevealed) {
+        combinedSpans.add(TextSpan(
+          text: ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
+          style: TextStyle(
+            fontFamily: _getCurrentFontFamily(),
+            fontSize: _quranFontSize * 0.8,
+            color: Color(0xFF417D7A),
+          ),
+        ));
+      }
+    }
+
+    return combinedSpans;
   }
 }
 
