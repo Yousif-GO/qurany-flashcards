@@ -29,17 +29,10 @@ A free, feature-rich Quran app designed for individual and group reading.
 - Progress tracking
 - Beautiful recitations
 
-### 🎨 Tajweed System
-- Color-coded rules for proper recitation:
-  - Necessary Prolongation (مد لازم)
-  - Obligatory Prolongation (مد واجب متصل)
-  - Permissible Prolongation (مد جائز منفصل)
-  - Normal Prolongation (مد طبيعي)
-  - Silent Letters (حروف لا تنطق)
-  - Emphatic R (ra) (تفخيم الراء)
-  - Qalqalah (قلقلة)
-  - Nasalization (غنة)
-  - And more...
+### 🎨 Memorization testing system mimicking the oldest Quran text
+![ageless quran timelless text](https://github.com/user-attachments/assets/df42884f-c68a-4a67-87dc-e9094b8f68af)
+Ageless Qur'an Timeless Text: A Visual Study of Sura 17 Across 14 Centuries & 19 Manuscripts Kindle Edition
+by Mohammad Mustafa al-Azami 
 
 ### 👥 Group Reading Features
 - Create or join Khatma groups
