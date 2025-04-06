@@ -1,6 +1,7 @@
 # Qurany Cards Pro 🕌 [[qurany Cards Pro](https://quranycards.com/)]
 
 A free, feature-rich Quran app designed for individual and group reading.
+![App view](https://github.com/user-attachments/assets/4fdb77c1-d172-40b2-8e87-c7bf5e261a6e)
 
 ## Contributing
 
