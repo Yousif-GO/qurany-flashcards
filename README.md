@@ -3,6 +3,8 @@
 A free, feature-rich Quran app designed for individual and group reading.
 ![App view](https://github.com/user-attachments/assets/4fdb77c1-d172-40b2-8e87-c7bf5e261a6e)
 
+![word by word mode](https://github.com/user-attachments/assets/7b87dcde-e49b-44ab-8ea2-3c11bee15411)
+
 ## Contributing
 
 1. Fork the repository
@@ -35,7 +37,10 @@ A free, feature-rich Quran app designed for individual and group reading.
 Ageless Qur'an Timeless Text: A Visual Study of Sura 17 Across 14 Centuries & 19 Manuscripts Kindle Edition
 by Mohammad Mustafa al-Azami 
 
+![](https://github.com/user-attachments/assets/c03021e7-4b2e-4aaa-9677-2f47d5537839)
+
 ### 👥 Group Reading Features
+
 - Create or join Khatma groups
 - Share groups via direct links
 - Track group progress
