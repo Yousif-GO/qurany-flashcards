@@ -62,6 +62,10 @@ flutter:
     - assets/Txt files/page_ayah_count.txt
     - assets/images/
     - assets/Quran_images/
+    - assets/Txt files/quran-simple-clean.txt
+    - assets/Txt files/en.sahih.txt
+    - assets/Txt files/ar.jalalayn.txt
+    - assets/Txt files/quran-uthmani-min.txt
   fonts:
     - family: _Othmani
       fonts:

@@ -86,27 +86,43 @@ class _MainSurahViewState extends State<MainSurahView> {
   Set<int> _partiallyRevealedAyahs = {};
   Set<int> _fullyRevealedAyahs = {};
   String? _surahBismillah;
-
   // Add new state variables for Quran text selection and font size
-  String _selectedQuranText = 'quran-uthmani-min.txt';
+  String _selectedQuranText = 'quran-uthmani (1).txt';
   double _quranFontSize = 24.0; // Default font size
-
+  String _selectedTafsir = 'ar.jalalayn.txt';
   // Add reciter selection
   String _selectedReciter = 'Hudhaify_32kbps';
 
-  // List of available Quran text files
+  // Add word-by-word mode
+  bool _wordByWordMode = false;
+  // Map to track revealed words for each ayah
+  Map<int, Set<int>> _revealedWords = {};
+  // Current word index within the current ayah
+  int _currentWordIndex = 0;
+
+  // List of available Quran text files (only quran-uthmani)
   final List<Map<String, String>> _quranTextOptions = [
     {
       'value': 'quran-uthmani (1).txt',
-      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
+      'label': 'Uthmani Script (ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ)',
       'fontFamily': '_Uthmanic_hafs_modified',
     },
     {
-      'value': 'quran-uthmani-min.txt',
+      'value': 'quran-uthmani-nodots_sckeleton.txt',
       'label':
-          'Uthmani Minimal (text with a minimal number of diacritics and symbols. (الحَمدُ لِلَّهِ رَبِّ العـٰلَمينَ)',
+          'Skeleton Uthmani Script,mimicking the Oldest written Quran (for memorization testing) (ٱلحمد للہ رٮ ٱلعـلمٮں)',
       'fontFamily': '_Othmani',
     }
+  ];
+  final List<Map<String, String>> _quranArabicTafsir = [
+    {
+      'value': 'ar.jalalayn.txt',
+      'label': 'Jalalayn Tafsir',
+    },
+    {
+      'value': 'ar.muyassar.txt',
+      'label': 'Muyassar Tafsir',
+    },
   ];
 
   // List of available reciters (with smaller file sizes preferred)
@@ -243,6 +259,8 @@ class _MainSurahViewState extends State<MainSurahView> {
       'auto_play_disabled': 'تم تعطيل التشغيل التلقائي',
       'show_first_word_enabled': 'تم تفعيل وضع إظهار الكلمة الأولى',
       'show_first_word_disabled': 'تم تعطيل وضع إظهار الكلمة الأولى',
+      'word_by_word_enabled': 'تم تفعيل وضع كلمة بكلمة',
+      'word_by_word_disabled': 'تم تعطيل وضع كلمة بكلمة',
       'ayahs_for_review': 'آيات للمراجعة:',
       'page': 'صفحة',
       'toggle_auto_play': 'تبديل التشغيل التلقائي',
@@ -259,6 +277,8 @@ class _MainSurahViewState extends State<MainSurahView> {
       'auto_play_disabled': 'Audio auto-play disabled',
       'show_first_word_enabled': 'Show first word mode activated',
       'show_first_word_disabled': 'Show first word mode deactivated',
+      'word_by_word_enabled': 'Word-by-word mode activated',
+      'word_by_word_disabled': 'Word-by-word mode deactivated',
       'ayahs_for_review': 'Ayahs for review:',
       'page': 'Page',
       'toggle_auto_play': 'Toggle Auto-play',
@@ -532,6 +552,10 @@ class _MainSurahViewState extends State<MainSurahView> {
 
   Map<String, dynamic>? roomDetails;
 
+  // Add variables for double tap detection
+  int _lastTapTime = 0;
+  static const int _doubleTapDelay = 300; // milliseconds
+
   @override
   void initState() {
     super.initState();
@@ -681,17 +705,21 @@ class _MainSurahViewState extends State<MainSurahView> {
     setState(() {
       _selectedQuranText =
           prefs.getString('selectedQuranText') ?? 'quran-uthmani (1).txt';
+      _selectedTafsir = prefs.getString('selectedTafsir') ?? 'ar.jalalayn.txt';
       _quranFontSize = prefs.getDouble('quranFontSize') ?? 24.0;
       _selectedReciter =
           prefs.getString('selectedReciter') ?? 'Hudhaify_32kbps';
+      _wordByWordMode = prefs.getBool('wordByWordMode') ?? false;
     });
   }
 
   Future<void> _saveTextPreferences() async {
     final prefs = await shared_prefs.SharedPreferences.getInstance();
     await prefs.setString('selectedQuranText', _selectedQuranText);
+    await prefs.setString('selectedTafsir', _selectedTafsir);
     await prefs.setDouble('quranFontSize', _quranFontSize);
     await prefs.setString('selectedReciter', _selectedReciter);
+    await prefs.setBool('wordByWordMode', _wordByWordMode);
   }
 
   Future<void> _loadData() async {
@@ -707,39 +735,46 @@ class _MainSurahViewState extends State<MainSurahView> {
           await rootBundle.loadString('assets/Txt files/${_selectedQuranText}');
 
       // Get the appropriate tafsir file based on language
-      String tafsirFile;
-      switch (widget.selectedLanguage) {
-        case AppLanguage.arabic:
-        case AppLanguage.english:
-          tafsirFile = 'ar.muyassar.txt';
-          break;
-        case AppLanguage.spanish:
-          tafsirFile = 'es.garcia.txt';
-          break;
-        case AppLanguage.hindi:
-          tafsirFile = 'hi.farooq.txt';
-          break;
-        case AppLanguage.urdu:
-          tafsirFile = 'ur.maududi.txt';
-          break;
-        case AppLanguage.indonesian:
-          tafsirFile = 'id.indonesian.txt';
-          break;
-        case AppLanguage.russian:
-          tafsirFile = 'ru.kalam.txt';
-          break;
-        case AppLanguage.chinese:
-          tafsirFile = 'zh.jian.txt';
-          break;
-        case AppLanguage.turkish:
-          tafsirFile = 'tr.ozturk.txt';
-          break;
+      String tafsirFile = _selectedTafsir;
+      if (widget.selectedLanguage != AppLanguage.arabic) {
+        // For non-Arabic languages, use the language-specific tafsir
+        switch (widget.selectedLanguage) {
+          case AppLanguage.arabic:
+            tafsirFile = _selectedTafsir;
+            break;
+          case AppLanguage.english:
+            tafsirFile = _selectedTafsir;
+            break;
+          case AppLanguage.spanish:
+            tafsirFile = 'es.garcia.txt';
+            break;
+          case AppLanguage.hindi:
+            tafsirFile = 'hi.farooq.txt';
+            break;
+          case AppLanguage.urdu:
+            tafsirFile = 'ur.maududi.txt';
+            break;
+          case AppLanguage.indonesian:
+            tafsirFile = 'id.indonesian.txt';
+            break;
+          case AppLanguage.russian:
+            tafsirFile = 'ru.kalam.txt';
+            break;
+          case AppLanguage.chinese:
+            tafsirFile = 'zh.jian.txt';
+            break;
+          case AppLanguage.turkish:
+            tafsirFile = 'tr.ozturk.txt';
+            break;
+          default:
+            tafsirFile = _selectedTafsir;
+        }
       }
 
       final tafsirText =
           await rootBundle.loadString('assets/Txt files/$tafsirFile');
       final translationText =
-          await rootBundle.loadString('assets/Txt files/en.yusufali.txt');
+          await rootBundle.loadString('assets/Txt files/en.sahih.txt');
 
       // Parse page mapping
       final mappingLines = mappingText.split('\n');
@@ -984,7 +1019,54 @@ class _MainSurahViewState extends State<MainSurahView> {
 
       if (nextAyahIndex < _pageAyahs.length) {
         setState(() {
-          if (_showFirstWordOnly) {
+          // Get the verse text for current ayah
+          String verseText = _pageAyahs[nextAyahIndex]['verse'] ?? '';
+          List<String> words = verseText.split(' ');
+
+          if (_wordByWordMode) {
+            // Word-by-word mode
+            if (!_revealedWords.containsKey(_currentAyah)) {
+              _revealedWords[_currentAyah] = {};
+            }
+
+            if (_revealedWords[_currentAyah]!.length < words.length) {
+              // Add next word
+              _revealedWords[_currentAyah]!
+                  .add(_revealedWords[_currentAyah]!.length);
+
+              // If all words revealed, mark ayah as fully revealed
+              if (_revealedWords[_currentAyah]!.length >= words.length) {
+                _fullyRevealedAyahs.add(_currentAyah);
+
+                // If this is the last ayah on the page, auto-navigate to next page
+                if (_currentAyah == _pageAyahs.length - 1 &&
+                    _pageAyahs.last['isNextPage'] != true) {
+                  _navigateToNextPage();
+                }
+              }
+            } else {
+              // All words revealed, move to next ayah
+              // Don't remove revealed words to keep them visible
+              _fullyRevealedAyahs.add(_currentAyah);
+              _currentAyah++;
+              _currentWordIndex = 0;
+
+              // Check if we're at the last standard ayah and there's a next page preview ayah
+              if (_currentAyah > _pageAyahs.length &&
+                  _pageAyahs.last['isNextPage'] == true) {
+                // Move to the next page
+                _navigateToNextPage();
+                return;
+              }
+
+              if (_autoPlayEnabled) {
+                final currentAyahData = _pageAyahs[nextAyahIndex];
+                _playAudio(currentAyahData['surah'], currentAyahData['ayah']);
+              }
+              widget.onAyahChanged(_currentAyah);
+            }
+          } else if (_showFirstWordOnly) {
+            // First word only mode - existing code
             if (_partiallyRevealedAyahs.contains(_currentAyah)) {
               _fullyRevealedAyahs.add(_currentAyah);
               _currentAyah++;
@@ -997,6 +1079,7 @@ class _MainSurahViewState extends State<MainSurahView> {
               _partiallyRevealedAyahs.add(_currentAyah);
             }
           } else {
+            // Default mode - show full ayah at once
             _fullyRevealedAyahs.add(_currentAyah);
             _currentAyah++;
             if (_autoPlayEnabled) {
@@ -1007,6 +1090,7 @@ class _MainSurahViewState extends State<MainSurahView> {
           }
         });
       } else {
+        // Existing code for handling end of page
         if (_getForgottenAyahList().isNotEmpty) {
           Navigator.pushReplacement(
             context,
@@ -1036,6 +1120,7 @@ class _MainSurahViewState extends State<MainSurahView> {
         }
       }
     } else {
+      // Existing code for handling beyond the page's ayahs
       if (_getForgottenAyahList().isNotEmpty) {
         Navigator.pushReplacement(
           context,
@@ -1178,9 +1263,30 @@ class _MainSurahViewState extends State<MainSurahView> {
       // Add to SRS system
       _srsScheduler.addItems(widget.pageNumber, {_currentAyah});
 
-      _fullyRevealedAyahs.remove(_currentAyah - 1);
-      _partiallyRevealedAyahs.remove(_currentAyah - 1);
+      // For standard mode
+      _fullyRevealedAyahs.remove(_currentAyah);
+      _partiallyRevealedAyahs.remove(_currentAyah);
+
+      // For word-by-word mode - clear the revealed words for this ayah
+      // to force the user to review it again, but don't remove the entry
+      // so the ayah remains visible (in orange)
+      if (_wordByWordMode && _revealedWords.containsKey(_currentAyah)) {
+        // Keep the revealed words, they'll just be shown in orange
+      }
     });
+
+    // Show a snackbar to indicate the ayah has been marked for review
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Ayah ${_currentAyah} marked for review',
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _resetForgottenAyahs() async {
@@ -1188,7 +1294,10 @@ class _MainSurahViewState extends State<MainSurahView> {
       _forgottenAyahs[widget.pageNumber]?.remove(_currentAyah);
       _srsScheduler.markReviewed(widget.pageNumber, _currentAyah, true);
     });
+
     List<int> reviewAyahs = _getForgottenAyahList();
+
+    // Play celebration sound/animation if appropriate
     if (_kidsMode && _kidsSoundEnabled && reviewAyahs.isNotEmpty) {
       try {
         final soundFile = _praiseSounds[_random.nextInt(_praiseSounds.length)];
@@ -1202,7 +1311,18 @@ class _MainSurahViewState extends State<MainSurahView> {
       _playCelebration();
     }
 
-    // Get review ayahs list
+    // Show a snackbar to confirm
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Ayah ${_currentAyah} removed from review',
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
 
     print('reviewAyahs: $reviewAyahs');
     // Only refresh if there are more than one review ayahs remaining
@@ -1215,8 +1335,6 @@ class _MainSurahViewState extends State<MainSurahView> {
           _isPlaying = false;
         });
       }
-    } else if (reviewAyahs.isEmpty) {
-      _navigateToNextPage();
     }
   }
 
@@ -1239,9 +1357,34 @@ class _MainSurahViewState extends State<MainSurahView> {
       }
 
       setState(() {
-        _currentAyah--;
-        _fullyRevealedAyahs.remove(_currentAyah);
-        _partiallyRevealedAyahs.remove(_currentAyah);
+        if (_wordByWordMode) {
+          // In word-by-word mode
+          if (_revealedWords.containsKey(_currentAyah) &&
+              _revealedWords[_currentAyah]!.isNotEmpty) {
+            // If we have revealed words for the current ayah, remove the last one
+            Set<int> currentWords = _revealedWords[_currentAyah]!;
+            int lastWordIndex =
+                currentWords.reduce((curr, next) => curr > next ? curr : next);
+            currentWords.remove(lastWordIndex);
+
+            // If all words are gone, go to previous ayah
+            if (currentWords.isEmpty) {
+              // Don't remove the entry entirely to preserve state
+              _currentAyah--;
+
+              // Remove from fully revealed if marked as such
+              _fullyRevealedAyahs.remove(_currentAyah);
+            }
+          } else {
+            // No words revealed for current ayah, go to previous ayah
+            _currentAyah--;
+          }
+        } else {
+          // Standard mode (non-word-by-word)
+          _currentAyah--;
+          _fullyRevealedAyahs.remove(_currentAyah);
+          _partiallyRevealedAyahs.remove(_currentAyah);
+        }
         widget.onAyahChanged(_currentAyah);
       });
     }
@@ -1332,6 +1475,58 @@ class _MainSurahViewState extends State<MainSurahView> {
     );
   }
 
+  void _handleTap() {
+    // Detect double tap
+    int now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastTapTime < _doubleTapDelay) {
+      // Double tap - reveal entire ayah and move to next
+      _handleDoubleTap();
+    } else {
+      // Single tap - normal behavior
+      _handleFirstClick(); // Handle first-time tutorial if needed
+      _showNextAyah();
+    }
+    _lastTapTime = now;
+  }
+
+  void _handleDoubleTap() {
+    if (_wordByWordMode && _currentAyah <= _pageAyahs.length) {
+      int ayahIndex = _currentAyah - 1;
+      if (ayahIndex < _pageAyahs.length) {
+        setState(() {
+          // Get the current ayah text
+          String verseText = _pageAyahs[ayahIndex]['verse'] ?? '';
+          List<String> words = verseText.split(' ');
+
+          // Fully reveal the current ayah
+          if (!_revealedWords.containsKey(_currentAyah)) {
+            _revealedWords[_currentAyah] = {};
+          }
+
+          // Add all words for the current ayah
+          for (int i = 0; i < words.length; i++) {
+            _revealedWords[_currentAyah]!.add(i);
+          }
+
+          // Mark as fully revealed and move to next ayah
+          _fullyRevealedAyahs.add(_currentAyah);
+          _currentAyah++;
+
+          // Play audio if enabled
+          if (_autoPlayEnabled) {
+            final currentAyahData = _pageAyahs[ayahIndex];
+            _playAudio(currentAyahData['surah'], currentAyahData['ayah']);
+          }
+
+          widget.onAyahChanged(_currentAyah);
+        });
+      }
+    } else {
+      // If not in word-by-word mode, just call normal next ayah
+      _showNextAyah();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1369,7 +1564,7 @@ class _MainSurahViewState extends State<MainSurahView> {
     return Stack(
       children: [
         GestureDetector(
-          onTap: _handleFirstClick,
+          onTap: _handleTap,
           child: Scaffold(
             appBar: AppBar(
               toolbarHeight:
@@ -1409,6 +1604,19 @@ class _MainSurahViewState extends State<MainSurahView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Word-by-word mode button
+                      IconButton(
+                        icon: Icon(
+                          _wordByWordMode
+                              ? Icons.text_format
+                              : Icons.text_fields,
+                          size: 24,
+                        ),
+                        onPressed: _toggleWordByWordMode,
+                        tooltip: _wordByWordMode
+                            ? 'Word-by-word mode enabled'
+                            : 'Word-by-word mode disabled',
+                      ),
                       IconButton(
                         icon: Icon(
                           _showFirstWordOnly ? Icons.edit_note : Icons.subject,
@@ -1417,6 +1625,10 @@ class _MainSurahViewState extends State<MainSurahView> {
                         onPressed: () {
                           setState(() {
                             _showFirstWordOnly = !_showFirstWordOnly;
+                            // Disable word-by-word mode if first word only mode is enabled
+                            if (_showFirstWordOnly) {
+                              _wordByWordMode = false;
+                            }
                           });
                           widget.onShowFirstWordOnlyChanged(_showFirstWordOnly);
 
@@ -1484,6 +1696,17 @@ class _MainSurahViewState extends State<MainSurahView> {
                           color: Color.fromARGB(255, 0, 0, 0),
                           size: 24,
                         ),
+                        onPressed: widget.pageNumber < 604
+                            ? () => _navigateToNextPage()
+                            : null,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons
+                              .arrow_forward_ios, // Right arrow for going forward
+                          color: Color(0xFF000000),
+                          size: 20,
+                        ),
                         onPressed: widget.pageNumber > 1
                             ? () {
                                 Navigator.pushReplacement(
@@ -1511,17 +1734,6 @@ class _MainSurahViewState extends State<MainSurahView> {
                                   ),
                                 );
                               }
-                            : null,
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons
-                              .arrow_forward_ios, // Right arrow for going forward
-                          color: Color(0xFF000000),
-                          size: 20,
-                        ),
-                        onPressed: widget.pageNumber < 604
-                            ? () => _navigateToNextPage()
                             : null,
                       ),
                     ],
@@ -1751,140 +1963,16 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                   text: TextSpan(
                                                     style: TextStyle(
                                                       fontFamily:
-                                                          _getCurrentFontFamily(), // Use the dynamic font family
+                                                          _getCurrentFontFamily(),
                                                       fontSize:
                                                           getQuranFontSize(),
                                                       height: 1.5,
                                                       color: Color(0xFF2B4141),
                                                     ),
+                                                    // Concatenate all ayahs into a single string to ensure proper text flow
                                                     children:
-                                                        surahAyahs.map((ayah) {
-                                                      final ayahIndex =
-                                                          _pageAyahs.indexOf(
-                                                                  ayah) +
-                                                              1;
-                                                      final isPartiallyRevealed =
-                                                          _partiallyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isFullyRevealed =
-                                                          _fullyRevealedAyahs
-                                                              .contains(
-                                                                  ayahIndex);
-                                                      final isRevealed =
-                                                          isPartiallyRevealed ||
-                                                              isFullyRevealed;
-
-                                                      if (ayah['isNextPage'] ==
-                                                          true) {
-                                                        return TextSpan(
-                                                          children: [
-                                                            TextSpan(
-                                                              text:
-                                                                  '\n\n━━━━ Next Page ━━━━\n\n',
-                                                              style: TextStyle(
-                                                                color: Color(
-                                                                    0xFF417D7A),
-                                                                fontSize:
-                                                                    getQuranFontSize() *
-                                                                        0.6,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            TextSpan(
-                                                              text: _showFirstWordOnly
-                                                                  ? (isFullyRevealed
-                                                                      ? ayah[
-                                                                          'verse']
-                                                                      : (isPartiallyRevealed
-                                                                          ? ayah['verse'].toString().split(' ')[0] +
-                                                                              ' ...'
-                                                                          : ''))
-                                                                  : (isRevealed
-                                                                      ? ayah[
-                                                                          'verse']
-                                                                      : ''),
-                                                              style: TextStyle(
-                                                                color: isRevealed
-                                                                    ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex +
-                                                                                1) ??
-                                                                            false
-                                                                        ? Colors
-                                                                            .orange
-                                                                        : Colors.grey[
-                                                                            600]!)
-                                                                    : Colors
-                                                                        .white,
-                                                                fontStyle:
-                                                                    FontStyle
-                                                                        .italic,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        );
-                                                      }
-
-                                                      return TextSpan(
-                                                        children: [
-                                                          // Ayah text with dynamic reveal
-                                                          TextSpan(
-                                                            text: _showFirstWordOnly
-                                                                ? (isFullyRevealed
-                                                                    ? ayah[
-                                                                        'verse']
-                                                                    : (isPartiallyRevealed
-                                                                        ? ayah['verse'].toString().split(' ')[0] +
-                                                                            ' ...'
-                                                                        : ''))
-                                                                : ayah['verse'],
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  _getCurrentFontFamily(), // Use the dynamic font family
-                                                              fontSize:
-                                                                  getQuranFontSize(),
-                                                              height: 1.5,
-                                                              letterSpacing: 0,
-                                                              color: _showFirstWordOnly
-                                                                  ? (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white)
-                                                                  : (isRevealed
-                                                                      ? (_forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ??
-                                                                              false
-                                                                          ? Colors
-                                                                              .orange
-                                                                          : Color(
-                                                                              0xFF2B4141))
-                                                                      : Colors
-                                                                          .white),
-                                                            ),
-                                                          ),
-                                                          // Use a background color to highlight the number
-
-                                                          TextSpan(
-                                                            text:
-                                                                ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  _getCurrentFontFamily(), // Use the dynamic font family
-                                                              fontSize:
-                                                                  getQuranFontSize() *
-                                                                      0.8,
-                                                              color: Color(
-                                                                  0xFF417D7A),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    }).toList(),
+                                                        _buildCombinedTextSpans(
+                                                            surahAyahs),
                                                   ),
                                                 ),
                                                 if (surahAyahs.isNotEmpty &&
@@ -1900,13 +1988,8 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                         .withOpacity(0.3),
                                                   ),
                                                   Text(
-                                                    _pageAyahs[(_currentAyah -
-                                                                2)
-                                                            .clamp(
-                                                                0,
-                                                                _pageAyahs
-                                                                        .length -
-                                                                    1)]['tafsir'] ??
+                                                    _pageAyahs[_getCurrentDisplayAyahIndex()]
+                                                            ['tafsir'] ??
                                                         '',
                                                     style: TextStyle(
                                                       fontSize:
@@ -1926,13 +2009,7 @@ class _MainSurahViewState extends State<MainSurahView> {
                                                           getVerticalPadding() *
                                                               0.5),
                                                   Text(
-                                                    _pageAyahs[(_currentAyah -
-                                                                    2)
-                                                                .clamp(
-                                                                    0,
-                                                                    _pageAyahs
-                                                                            .length -
-                                                                        1)]
+                                                    _pageAyahs[_getCurrentDisplayAyahIndex()]
                                                             ['translation'] ??
                                                         '',
                                                     style: TextStyle(
@@ -2292,6 +2369,27 @@ class _MainSurahViewState extends State<MainSurahView> {
                       }).toList(),
                     ),
                     SizedBox(height: 20),
+                    // Add Tafsir selection
+                    Text('Arabic Tafsir:'),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedTafsir,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedTafsir = newValue;
+                          });
+                        }
+                      },
+                      items: _quranArabicTafsir.map<DropdownMenuItem<String>>(
+                          (Map<String, String> option) {
+                        return DropdownMenuItem<String>(
+                          value: option['value'],
+                          child: Text(option['label']!),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20),
                     Text('Font Size: ${_quranFontSize.toStringAsFixed(1)}'),
                     Slider(
                       value: _quranFontSize,
@@ -2338,12 +2436,14 @@ class _MainSurahViewState extends State<MainSurahView> {
                 TextButton(
                   child: Text('Apply'),
                   onPressed: () {
-                    // Update the main state and reload data if text file changed
+                    // Update the main state and reload data if text or tafsir file changed
                     this.setState(() {
                       _quranFontSize = _quranFontSize;
-                      if (_selectedQuranText != this._selectedQuranText) {
+                      if (_selectedQuranText != this._selectedQuranText ||
+                          _selectedTafsir != this._selectedTafsir) {
                         this._selectedQuranText = _selectedQuranText;
-                        _loadData(); // Reload data with new text file
+                        this._selectedTafsir = _selectedTafsir;
+                        _loadData(); // Reload data with new text file and tafsir
                       }
                       this._selectedReciter = _selectedReciter;
                     });
@@ -2370,6 +2470,233 @@ class _MainSurahViewState extends State<MainSurahView> {
 
     // Return the font family from the selected option
     return selectedOption['fontFamily'] ?? '_Uthmanic_hafs';
+  }
+
+  // Helper method to build text spans for word-by-word display
+  List<TextSpan> _buildWordByWordTextSpans(
+      String text, int ayahIndex, bool isRevealed,
+      [bool isNextPage = false]) {
+    // Remove any potential newlines in the text
+    text = text.replaceAll('\n', ' ').trim();
+
+    List<String> words = text.split(' ');
+    List<TextSpan> wordSpans = [];
+
+    // If not revealed at all, return empty list
+    if (!isRevealed) return wordSpans;
+
+    // Get the set of revealed word indices for this ayah
+    Set<int> revealedIndices = _revealedWords[ayahIndex] ?? {};
+
+    // Check if this ayah is in the review list (marked as forgotten)
+    bool isInReview =
+        _forgottenAyahs[widget.pageNumber]?.contains(ayahIndex + 1) ?? false;
+
+    // Add a space at the beginning if this is not the first ayah
+    if (ayahIndex > 1 && !isNextPage) {
+      wordSpans.add(TextSpan(text: ' '));
+    }
+
+    for (int i = 0; i < words.length; i++) {
+      bool isWordRevealed = revealedIndices.contains(i);
+
+      // Add a space before each word except the first
+      if (i > 0) {
+        wordSpans.add(TextSpan(text: ' '));
+      }
+
+      // Add the word with appropriate visibility and color
+      wordSpans.add(
+        TextSpan(
+          text: words[i],
+          style: TextStyle(
+            color: isWordRevealed
+                ? (isInReview ? Colors.orange : Color(0xFF2B4141))
+                : Colors.white,
+          ),
+        ),
+      );
+    }
+
+    return wordSpans;
+  }
+
+  // Toggle word-by-word mode
+  void _toggleWordByWordMode() {
+    setState(() {
+      _wordByWordMode = !_wordByWordMode;
+
+      // Reset current word index and clear revealed words when toggling mode
+      _currentWordIndex = 0;
+
+      // If turning off word-by-word mode, clear the tracked words
+      if (!_wordByWordMode) {
+        _revealedWords.clear();
+      }
+    });
+
+    _saveTextPreferences();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          getTranslation(_wordByWordMode
+              ? 'word_by_word_enabled'
+              : 'word_by_word_disabled'),
+          textAlign:
+              isRTL(widget.selectedLanguage) ? TextAlign.right : TextAlign.left,
+        ),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  // Helper method to get the correct index for tafsir and translation
+  int _getCurrentDisplayAyahIndex() {
+    // When in word-by-word mode, use the current ayah index directly
+    // Otherwise use the previous implementation (currentAyah - 2)
+    if (_wordByWordMode) {
+      return (_currentAyah - 1).clamp(0, _pageAyahs.length - 1);
+    } else {
+      return (_currentAyah - 2).clamp(0, _pageAyahs.length - 1);
+    }
+  }
+
+  // Helper method to build combined text spans
+  List<TextSpan> _buildCombinedTextSpans(
+      List<Map<String, dynamic>> surahAyahs) {
+    List<TextSpan> combinedSpans = [];
+    bool isFirstAyah = true;
+
+    for (var ayah in surahAyahs) {
+      final ayahIndex = _pageAyahs.indexOf(ayah) + 1;
+      final isPartiallyRevealed = _partiallyRevealedAyahs.contains(ayahIndex);
+      final isFullyRevealed = _fullyRevealedAyahs.contains(ayahIndex);
+      final isRevealed = isPartiallyRevealed || isFullyRevealed;
+
+      // Handle next page ayah differently
+      if (ayah['isNextPage'] == true) {
+        combinedSpans.add(TextSpan(
+          text: '\n\n━━━━ Next Page ━━━━\n\n',
+          style: TextStyle(
+            color: Color(0xFF417D7A),
+            fontSize: _quranFontSize * 0.6,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+
+        if (_wordByWordMode) {
+          // Handle word-by-word mode for next page ayah
+          combinedSpans.addAll(_buildWordByWordTextSpans(
+              ayah['verse'],
+              ayahIndex,
+              isRevealed || _revealedWords.containsKey(ayahIndex),
+              true)); // true means it's a next page ayah
+        } else {
+          // Standard display for next page ayah
+          combinedSpans.add(TextSpan(
+            text: _showFirstWordOnly
+                ? (isFullyRevealed
+                    ? ayah['verse']
+                    : (isPartiallyRevealed
+                        ? ayah['verse'].toString().split(' ')[0] + ' ...'
+                        : ''))
+                : (isRevealed ? ayah['verse'] : ''),
+            style: TextStyle(
+              color: isRevealed
+                  ? (_forgottenAyahs[widget.pageNumber]
+                              ?.contains(ayahIndex + 1) ??
+                          false
+                      ? Colors.orange
+                      : Colors.grey[600]!)
+                  : Colors.white,
+              fontStyle: FontStyle.italic,
+            ),
+          ));
+        }
+        continue; // Skip to the next ayah
+      }
+
+      // Add space between ayahs, but not before the first ayah
+      if (!isFirstAyah && !_wordByWordMode) {
+        combinedSpans.add(TextSpan(text: ' '));
+      }
+      isFirstAyah = false;
+
+      // Determine if all words are revealed in word-by-word mode
+      bool allWordsRevealed = false;
+      if (_wordByWordMode && _revealedWords.containsKey(ayahIndex)) {
+        int totalWords = ayah['verse'].toString().split(' ').length;
+        allWordsRevealed = _revealedWords[ayahIndex]!.length >= totalWords;
+      }
+
+      // Add the ayah text with appropriate styling
+      if (_wordByWordMode) {
+        // Word-by-word display
+        combinedSpans.addAll(_buildWordByWordTextSpans(
+            ayah['verse'],
+            ayahIndex,
+            isRevealed || _revealedWords.containsKey(ayahIndex),
+            false)); // false means it's not a next page ayah
+      } else {
+        // Standard display mode - ensure there are no newlines in the text
+        String verseText = _showFirstWordOnly
+            ? (isFullyRevealed
+                ? ayah['verse']
+                : (isPartiallyRevealed
+                    ? ayah['verse'].toString().split(' ')[0] + ' ...'
+                    : ''))
+            : ayah['verse'];
+
+        // Remove any potential newlines in the verse text
+        verseText = verseText.replaceAll('\n', ' ').trim();
+
+        combinedSpans.add(
+          TextSpan(
+            text: verseText,
+            style: TextStyle(
+              fontFamily: _getCurrentFontFamily(),
+              fontSize: _quranFontSize,
+              height: 1.5,
+              letterSpacing: 0,
+              color: _showFirstWordOnly
+                  ? (isRevealed
+                      ? (_forgottenAyahs[widget.pageNumber]
+                                  ?.contains(ayahIndex + 1) ??
+                              false
+                          ? Colors.orange
+                          : Color(0xFF2B4141))
+                      : Colors.white)
+                  : (isRevealed
+                      ? (_forgottenAyahs[widget.pageNumber]
+                                  ?.contains(ayahIndex + 1) ??
+                              false
+                          ? Colors.orange
+                          : Color(0xFF2B4141))
+                      : Colors.white),
+            ),
+          ),
+        );
+      }
+
+      // Add the ayah marker based on mode and visibility condition
+      if (!_wordByWordMode || isFullyRevealed || allWordsRevealed) {
+        combinedSpans.add(TextSpan(
+          text: ' ${' ﴿' + (ayah['ayah'].toString()) + '﴾ '} ',
+          style: TextStyle(
+            fontFamily: _getCurrentFontFamily(),
+            fontSize: _quranFontSize * 0.8,
+            color: Color(0xFF417D7A),
+          ),
+        ));
+      }
+    }
+
+    return combinedSpans;
   }
 }
 
